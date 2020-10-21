@@ -1,15 +1,9 @@
-- name: example_global_value
-  path: $.counter
-  labels:
-    environment: beta # static label
-
-- name: example_value
+- name: testBQ
   type: object
-  path: $.values[*]?(@.state == "ACTIVE")
-  labels:
-    environment: beta # static label
-    id: $.id          # dynamic label
+  path: $.values
   values:
-    active: 1      # static value
-    count: $.count # dynamic value
-    boolean: $.some_boolean
+      spent: $.sumCost     # static value
+      vmnum: $.sumVM # dynamic value
+      sumMemory: $.sumMemory
+      sumCores: $.sumCores
+      sumGPU: $.sumGPU
