@@ -1,12 +1,14 @@
-ARG ARCH="amd64"
-ARG OS="linux"
-FROM quay.io/prometheus/busybox-${OS}-${ARCH}:glibc
-LABEL maintainer="The Prometheus Authors <prometheus-developers@googlegroups.com>"
+FROM ubuntu:18.04
 
-ARG ARCH="amd64"
-ARG OS="linux"
-COPY .build/${OS}-${ARCH}/json_exporter /bin/json_exporter
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    nano \
+    vim \
+    zip \
+    git \
+    jq
+
 
 EXPOSE      7979
-USER        nobody
-ENTRYPOINT  [ "/bin/json_exporter" ]
