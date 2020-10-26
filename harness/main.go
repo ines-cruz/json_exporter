@@ -20,12 +20,12 @@ import (
 
 var (
 	defaultOpts = []cli.Flag{
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "port",
 			Usage: "The port number used to expose metrics via http",
 			Value: 7979,
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "log-level",
 			Usage: "Set Logging level",
 			Value: "info",
