@@ -14,8 +14,8 @@
 package main
 
 import (
-	"github.com/prometheus-community/json_exporter/harness"
-	"github.com/prometheus-community/json_exporter/jsonexporter"
+	"github.com/ines-cruz/json_exporter/harness"
+	"github.com/ines-cruz/json_exporter/jsonexporter"
 	"context"
 	"fmt"
 	"strings"

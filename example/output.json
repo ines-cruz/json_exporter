@@ -1,7 +1,7 @@
 {
 "values": {
 "sumCores": 35059,
-"sumCost": 1646.709999999895,
+"sumCost": 1648.729999999928,
 "sumGPU": 495,
 "sumMem": 13729446,
 "sumVM": 3383

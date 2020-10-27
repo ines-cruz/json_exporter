@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	"github.com/kawamuray/jsonpath" // Originally: "github.com/NickSardo/jsonpath"
-	"github.com/prometheus-community/json_exporter/harness"
+	"github.com/ines-cruz/json_exporter/harness"
 	log "github.com/sirupsen/logrus"
 )
 
