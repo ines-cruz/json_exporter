@@ -41,8 +41,17 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 
 
+
+ADD . /go/src/github.com/ines-cruz/json_exporter
+
+RUN go get github.com/ines-cruz/json_exporter
+RUN go install github.com/ines-cruz/json_exporter
+
+
     # ------------------ Clone TS repo and get bash
-RUN cd ~; cd go/src ; echo "git clone -q https://github.com/ines-cruz/json_exporter ; cd json_exporter" > ~/.bashrc
+RUN  echo " cd json_exporter" > ~/.bashrc
+
+
 
 
 
@@ -52,9 +61,6 @@ RUN go get -u \
     google.golang.org/api/googleapi \
     google.golang.org/api/bigquery/v2 \
     go.opencensus.io/trace
-
-
-
 
 
 
