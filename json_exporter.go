@@ -14,8 +14,8 @@
 package main
 
 import (
-	"github.com/ines-cruz/json_exporter/harness"
-	"github.com/ines-cruz/json_exporter/jsonexporter"
+	"/json_exporter/harness"
+	"/json_exporter/jsonexporter"
 	"context"
 	"fmt"
 	"strings"
