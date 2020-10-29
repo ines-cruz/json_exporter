@@ -20,12 +20,12 @@ import (
 
 var (
 	defaultOpts = []cli.Flag{
-		&cli.IntFlag{
+		cli.IntFlag{
 			Name:  "port",
 			Usage: "The port number used to expose metrics via http",
 			Value: 7979,
 		},
-		&cli.StringFlag{
+		cli.StringFlag{
 			Name:  "log-level",
 			Usage: "Set Logging level",
 			Value: "info",
@@ -48,10 +48,10 @@ func MakeApp(opts *ExporterOpts) *cli.App {
 	app.Usage = "A prometheus " + opts.Name
 	app.UsageText = opts.Usage
 	app.Action = exp.main
-	app.Flags = buildOptsWithDefault(opts.Flags, defaultOpts)
+	&app.Flags = buildOptsWithDefault(opts.Flags, defaultOpts)
 
-	if opts.Tick && !contains(app.Flags, defaultTickOpt) {
-		app.Flags = append(app.Flags, defaultTickOpt)
+	if opts.Tick && !contains(&app.Flags, defaultTickOpt) {
+		&app.Flags = append(app.Flags, defaultTickOpt)
 	}
 
 	return app
@@ -68,7 +68,7 @@ func buildOptsWithDefault(opts []cli.Flag, defaultOpts []cli.Flag) []cli.Flag {
 
 func contains(opts []cli.Flag, opt cli.Flag) bool {
 	for _, o := range opts {
-		if o.GetName() == opt.GetName() {
+		if &o.GetName() == &opt.GetName() {
 			return true
 		}
 	}

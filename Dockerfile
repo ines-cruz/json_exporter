@@ -36,16 +36,31 @@ RUN pip3 install \
 
 
 ENV GOPATH /root/go
+ENV PATH=$PATH:$GOPATH/bin
+
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 
-
-
 ADD . /go/src/github.com/ines-cruz/json_exporter
+#RUN go build -o github.com/ines-cruz/json_exporter/harness
+#RUN go build -o github.com/ines-cruz/json_exporter/jsonexporter
 
-RUN go get github.com/ines-cruz/json_exporter
-RUN go install github.com/ines-cruz/json_exporter
+
+RUN go get -u -d github.com/ines-cruz/json_exporter/jsonexporter
+RUN go get -u -d github.com/ines-cruz/json_exporter/harness
+
+
+#RUN go install github.com/ines-cruz/json_exporter
+
+
+
+ADD . /go/src/github.com/urfave/cli
+
+#RUN go get -u -d github.com/urfave/cli
+
+
+#RUN go install github.com/urfave/cli
 
 
     # ------------------ Clone TS repo and get bash
