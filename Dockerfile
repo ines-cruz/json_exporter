@@ -46,7 +46,7 @@ ADD . /go/src/github.com/ines-cruz/json_exporter
 #RUN go build -o github.com/ines-cruz/json_exporter/harness
 #RUN go build -o github.com/ines-cruz/json_exporter/jsonexporter
 
-
+RUN go mod init github.com/ines-cruz/json_exporter/
 RUN go get -u -d github.com/ines-cruz/json_exporter/jsonexporter
 RUN go get -u -d github.com/ines-cruz/json_exporter/harness
 
@@ -55,9 +55,9 @@ RUN go get -u -d github.com/ines-cruz/json_exporter/harness
 
 
 
-ADD . /go/src/github.com/urfave/cli
+ADD . /go/src/github.com/urfave/cli/v2
 
-#RUN go get -u -d github.com/urfave/cli
+RUN go get -u -d github.com/urfave/cli/v2
 
 
 #RUN go install github.com/urfave/cli

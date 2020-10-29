@@ -18,7 +18,7 @@ import (
 
 	"github.com/ines-cruz/json_exporter/harness"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 type ScrapeType struct {
