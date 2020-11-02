@@ -5,17 +5,13 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
-    awscli \
     python3-pip \
     nano \
-    vim \
-    zip \
     git \
-    snapd \
-    net-tools \
     jq \
     golang \
-    python
+    python \
+    make
     #python-pip \
     #python2.7 \
 
@@ -45,12 +41,8 @@ ADD . /go/src/github.com/ines-cruz/json_exporter
 RUN go get -u -d github.com/ines-cruz/json_exporter/
 
 
-
-
-
     # ------------------ Clone TS repo and get bash
-RUN  echo " cd go/src/github.com/ines-cruz/json_exporter" > ~/.bashrc
-RUN make build
+RUN  echo " cd go/src/github.com/ines-cruz/json_exporter" > ~/.bashrc 
 
 
 
