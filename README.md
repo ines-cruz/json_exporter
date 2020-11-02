@@ -2,6 +2,7 @@ json_exporter
 ========================
 
 A [prometheus](https://prometheus.io/) exporter which scrapes remote JSON by JSONPath.
+Forked from the [Prometheus Community](https://github.com/prometheus-community/json_exporter/)
 
 # Build
 
