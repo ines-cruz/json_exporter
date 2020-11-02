@@ -31,8 +31,6 @@ RUN pip3 install \
     zeep \
     cs \
     boto3
-    #google-cloud-api \
-    #google-api-client \
 
 
 ENV GOPATH /root/go
@@ -43,29 +41,16 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 
 ADD . /go/src/github.com/ines-cruz/json_exporter
-#RUN go build -o github.com/ines-cruz/json_exporter/harness
-#RUN go build -o github.com/ines-cruz/json_exporter/jsonexporter
 
-RUN go mod init github.com/ines-cruz/json_exporter/
-RUN go get -u -d github.com/ines-cruz/json_exporter/jsonexporter
-RUN go get -u -d github.com/ines-cruz/json_exporter/harness
-
-
-#RUN go install github.com/ines-cruz/json_exporter
+RUN go get -u -d github.com/ines-cruz/json_exporter/
 
 
 
-ADD . /go/src/github.com/urfave/cli/v2
-
-RUN go get -u -d github.com/urfave/cli/v2
-
-
-#RUN go install github.com/urfave/cli
 
 
     # ------------------ Clone TS repo and get bash
-RUN  echo " cd json_exporter" > ~/.bashrc
-
+RUN  echo " cd go/src/github.com/ines-cruz/json_exporter" > ~/.bashrc
+RUN make build
 
 
 

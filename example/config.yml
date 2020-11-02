@@ -1,3 +1,4 @@
+metrics:
 - name: testBQ
   type: object
   path: $.values

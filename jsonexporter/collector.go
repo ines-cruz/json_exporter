@@ -14,18 +14,86 @@
 package jsonexporter
 
 import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
+	"errors"
+	"strconv"
 
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/kawamuray/jsonpath" // Originally: "github.com/NickSardo/jsonpath"
-	"github.com/ines-cruz/json_exporter/harness"
-	log "github.com/sirupsen/logrus"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-type Collector struct {
-	Endpoint string
-	scrapers []JsonScraper
+type JsonMetricCollector struct {
+	JsonMetrics []JsonMetric
+	Data        []byte
+	Logger      log.Logger
+}
+
+type JsonMetric struct {
+	Desc            *prometheus.Desc
+	KeyJsonPath     string
+	ValueJsonPath   string
+	LabelsJsonPaths []string
+}
+
+func (mc JsonMetricCollector) Describe(ch chan<- *prometheus.Desc) {
+	for _, m := range mc.JsonMetrics {
+		ch <- m.Desc
+	}
+}
+
+func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
+	for _, m := range mc.JsonMetrics {
+		if m.ValueJsonPath == "" { // ScrapeType is 'value'
+			floatValue, err := extractValue(mc.Logger, mc.Data, m.KeyJsonPath)
+			if err != nil {
+				// Avoid noise and continue silently if it was a missing path error
+				if err.Error() == "Path not found" {
+					level.Debug(mc.Logger).Log("msg", "Failed to extract float value for metric", "path", m.KeyJsonPath, "err", err, "metric", m.Desc) //nolint:errcheck
+					continue
+				}
+				level.Error(mc.Logger).Log("msg", "Failed to extract float value for metric", "path", m.KeyJsonPath, "err", err, "metric", m.Desc) //nolint:errcheck
+				continue
+			}
+
+			ch <- prometheus.MustNewConstMetric(
+				m.Desc,
+				prometheus.UntypedValue,
+				floatValue,
+				extractLabels(mc.Logger, mc.Data, m.LabelsJsonPaths)...,
+			)
+		} else { // ScrapeType is 'object'
+			path, err := compilePath(m.KeyJsonPath)
+			if err != nil {
+				level.Error(mc.Logger).Log("msg", "Failed to compile path", "path", m.KeyJsonPath, "err", err) //nolint:errcheck
+				continue
+			}
+
+			eval, err := jsonpath.EvalPathsInBytes(mc.Data, []*jsonpath.Path{path})
+			if err != nil {
+				level.Error(mc.Logger).Log("msg", "Failed to create evaluator for json path", "path", m.KeyJsonPath, "err", err) //nolint:errcheck
+				continue
+			}
+			for {
+				if result, ok := eval.Next(); ok {
+					floatValue, err := extractValue(mc.Logger, result.Value, m.ValueJsonPath)
+					if err != nil {
+						level.Error(mc.Logger).Log("msg", "Failed to extract value", "path", m.ValueJsonPath, "err", err) //nolint:errcheck
+						continue
+					}
+
+					ch <- prometheus.MustNewConstMetric(
+						m.Desc,
+						prometheus.UntypedValue,
+						floatValue,
+						extractLabels(mc.Logger, result.Value, m.LabelsJsonPaths)...,
+					)
+				} else {
+					break
+				}
+			}
+		}
+	}
 }
 
 func compilePath(path string) (*jsonpath.Path, error) {
@@ -42,55 +110,76 @@ func compilePath(path string) (*jsonpath.Path, error) {
 	return paths[0], nil
 }
 
-func compilePaths(paths map[string]string) (map[string]*jsonpath.Path, error) {
-	compiledPaths := make(map[string]*jsonpath.Path)
-	for name, value := range paths {
-		if len(value) < 1 || value[0] != '$' {
-			// Static value
-			continue
+// Returns the first matching float value at the given json path
+func extractValue(logger log.Logger, json []byte, path string) (float64, error) {
+	var floatValue = -1.0
+	var result *jsonpath.Result
+	var err error
+
+	if len(path) < 1 || path[0] != '$' {
+		// Static value
+		return parseValue([]byte(path))
+	}
+
+	// Dynamic value
+	p, err := compilePath(path)
+	if err != nil {
+		return floatValue, err
+	}
+
+	eval, err := jsonpath.EvalPathsInBytes(json, []*jsonpath.Path{p})
+	if err != nil {
+		return floatValue, err
+	}
+
+	result, ok := eval.Next()
+	if result == nil || !ok {
+		if eval.Error != nil {
+			return floatValue, eval.Error
+		} else {
+			level.Debug(logger).Log("msg", "Path not found", "path", path, "json", string(json)) //nolint:errcheck
+			return floatValue, errors.New("Path not found")
 		}
-		compiledPath, err := compilePath(value)
+	}
+
+	return SanitizeValue(result)
+}
+
+// Returns the list of labels created from the list of provided json paths
+func extractLabels(logger log.Logger, json []byte, paths []string) []string {
+	labels := make([]string, len(paths))
+	for i, path := range paths {
+
+		// Dynamic value
+		p, err := compilePath(path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse path;path:<%s>,err:<%s>", value, err)
-		}
-		compiledPaths[name] = compiledPath
-	}
-	return compiledPaths, nil
-}
-
-func NewCollector(endpoint string, scrapers []JsonScraper) *Collector {
-	return &Collector{
-		Endpoint: endpoint,
-		scrapers: scrapers,
-	}
-}
-
-func (col *Collector) fetchJson() ([]byte, error) {
-	resp, err := http.Get(col.Endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", col.Endpoint, err)
-	}
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body;err:<%s>", err)
-	}
-
-	return data, nil
-}
-
-func (col *Collector) Collect(reg *harness.MetricRegistry) {
-	json, err := col.fetchJson()
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	for _, scraper := range col.scrapers {
-		if err := scraper.Scrape(json, reg); err != nil {
-			log.Errorf("error while scraping json;err:<%s>", err)
+			level.Error(logger).Log("msg", "Failed to compile path for label", "path", path, "err", err) //nolint:errcheck
 			continue
 		}
+
+		eval, err := jsonpath.EvalPathsInBytes(json, []*jsonpath.Path{p})
+		if err != nil {
+			level.Error(logger).Log("msg", "Failed to create evaluator for json", "path", path, "err", err) //nolint:errcheck
+			continue
+		}
+
+		result, ok := eval.Next()
+		if result == nil || !ok {
+			if eval.Error != nil {
+				level.Error(logger).Log("msg", "Failed to evaluate", "json", string(json), "err", eval.Error) //nolint:errcheck
+			} else {
+				level.Warn(logger).Log("msg", "Label path not found in json", "path", path)                        //nolint:errcheck
+				level.Debug(logger).Log("msg", "Label path not found in json", "path", path, "json", string(json)) //nolint:errcheck
+			}
+			continue
+		}
+
+		l, err := strconv.Unquote(string(result.Value))
+		if err == nil {
+			labels[i] = l
+		} else {
+			labels[i] = string(result.Value)
+		}
 	}
+	return labels
 }

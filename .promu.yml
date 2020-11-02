@@ -1,5 +1,4 @@
 go:
-    # This must match .circle/config.yml.
     version: 1.14
 repository:
     path: github.com/ines-cruz/json_exporter

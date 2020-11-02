@@ -14,8 +14,7 @@
 package main
 
 import (
-	"github.com/ines-cruz/json_exporter/harness"
-	"github.com/ines-cruz/json_exporter/jsonexporter"
+	"github.com/ines-cruz/json_exporter/cmd"
 	"context"
 	"fmt"
 	"strings"
@@ -55,10 +54,9 @@ func main() {
 
 		_ = ioutil.WriteFile("example/output.json", file, 0644)
 
-	opts := harness.NewExporterOpts("json_exporter", jsonexporter.Version)
-	opts.Usage = "[OPTIONS] HTTP_ENDPOINT CONFIG_PATH"
-	opts.Init = jsonexporter.Init
-	harness.Main(opts)
+
+cmd.Run()
+
 }
 
 func query(ctx context.Context, client *bigquery.Client) (*bigquery.RowIterator, error) {
