@@ -98,20 +98,20 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 				LabelsJsonPaths: variableLabelsValues,
 			}
 			metrics = append(metrics, jsonMetric)
-		case config.ObjectScrape:
-			for subName, valuePath := range metric.Values {
-				name := MakeMetricName(metric.Name, subName)
-				constLabels := make(map[string]string)
-				var variableLabels, variableLabelsValues []string
-				for k, v := range metric.Labels {
-					if len(v) < 1 || v[0] != '$' {
-						// Static value
-						constLabels[k] = v
-					} else {
-						variableLabels = append(variableLabels, k)
-						variableLabelsValues = append(variableLabelsValues, v)
-					}
-				}
+    case config.ObjectScrape:
+      for subName, valuePath := range metric.Values {
+        name := MakeMetricName(metric.Name, subName)
+        constLabels := make(map[string]string)
+        var variableLabels, variableLabelsValues []string
+        for k, v := range metric.Labels {
+          if len(v) < 1 || v[0] != '$' {
+            // Static value
+            constLabels[k] = v
+          } else {
+            variableLabels = append(variableLabels, k)
+            variableLabelsValues = append(variableLabelsValues, v)
+          }
+        }
 				jsonMetric := JsonMetric{
 					Desc: prometheus.NewDesc(
 						name,
@@ -133,39 +133,137 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 }
 
 func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config config.Config) ([]byte, error) {
-	httpClientConfig := config.HTTPClientConfig
-	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, true)
-	if err != nil {
-		level.Error(logger).Log("msg", "Error generating HTTP client", "err", err) //nolint:errcheck
-		return nil, err
-	}
-	req, err := http.NewRequest("GET", endpoint, nil)
-	req = req.WithContext(ctx)
-	if err != nil {
-		level.Error(logger).Log("msg", "Failed to create request", "err", err) //nolint:errcheck
-		return nil, err
-	}
+  httpClientConfig := config.HTTPClientConfig
+  client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
+  if err != nil {
+    level.Error(logger).Log("msg", "Error generating HTTP client", "err", err) //nolint:errcheck
+    return nil, err
+  }
+  req, err := http.NewRequest("GET", endpoint, nil)
+  req = req.WithContext(ctx)
+  	ctx := context.Background()
 
-	for key, value := range config.Headers {
+
+	if err != nil {
+    	level.Error(logger).Log("msg", "Failed to create request", "err", err)
+		return nil, err
+	}
+  for key, value := range config.Headers {
 		req.Header.Add(key, value)
 	}
 	if req.Header.Get("Accept") == "" {
 		req.Header.Add("Accept", "application/json")
 	}
 	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+  defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return nil, errors.New(resp.Status)
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+}
+data, err := ioutil.ReadAll(resp.Body)
+if err != nil {
+  return nil, err}
 
 	return data, nil
 }
+
+/*
+func query(ctx context.Context, client *bigquery.Client) (*bigquery.RowIterator, error) {
+
+	q := client.Query(`
+		SELECT cost,  sku.description, system_labels,
+		FROM `+"`MyBilling.gcp_billing_export_v1_0190AC_ADCAC5_4B89E9` "				)
+
+	return q.Read(ctx)
+}
+
+
+// printResults prints results from a query to the _ public dataset.
+func printResults(w io.Writer, iter *bigquery.RowIterator) map[string]float64{
+	var  sumCost float64
+	var sumGPU float64
+	var sumTot int
+	var sumCores float64
+	var sumMem float64
+	var sumVM float64
+	d := map[string]float64{}
+
+
+	for {
+
+		sumTot=1+sumTot
+
+		var row []bigquery.Value
+		err := iter.Next(&row)
+
+		if err == iterator.Done {
+			break
+		}
+
+		var	ex float64 =sumCost
+		sumCost=row[0].(float64)
+		sumCost = math.Round(sumCost*100)/100 + ex
+		system_labels:=row[2].([]bigquery.Value)
+
+		if(len(system_labels) > 0){
+
+			sumCores=getCores(system_labels, sumCores)
+			sumVM=getVM(system_labels,  sumVM)
+			sumMem=getMem(system_labels,  sumMem)
+
+		}
+		sku := row[1].(string)
+
+		if strings.Contains(sku, "GPU"){
+			sumGPU=1+sumGPU
+		}
+
+	}
+
+	d["sumCost"]=  sumCost
+	d["sumGPU"]= sumGPU
+	d["sumCores"]=  sumCores
+	d["sumMem"]=  sumMem
+	d["sumVM"]=  sumVM
+
+
+	return d
+}
+func getCores(sys []bigquery.Value, sumCores float64) float64{
+	var valCores =fmt.Sprint(sys[0])
+
+	if strings.Contains(valCores,"cores" ) {
+		s := strings.Fields(valCores)
+		sCores:= strings.Replace(s[1], "]","", -1)
+
+		example, err :=  strconv.ParseFloat(fmt.Sprint(sCores),  64)
+		if(err== nil){
+			// TODO: Handle error.
+		}
+		sumCores=example+sumCores
+	}
+	return sumCores
+}
+func getVM(sys []bigquery.Value, sumVM float64) float64{
+	var valVM =fmt.Sprint(sys[1])
+
+	if strings.Contains(valVM,"machine_spec" ) {
+		sumVM= sumVM+1
+	}
+	return sumVM
+}
+
+
+func getMem(sys []bigquery.Value, sumMem float64 ) float64{
+	var valMem =fmt.Sprint(sys[2])
+
+	if strings.Contains(valMem,"memory" ) {
+
+		example, err := strconv.ParseFloat(fmt.Sprint(valMem[len(valMem)-5:len(valMem)-1]), 64)
+		if(err== nil){
+			// TODO: Handle error.
+		}
+		sumMem=example+sumMem
+	}
+	return sumMem
+}*/

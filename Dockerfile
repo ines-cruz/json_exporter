@@ -1,6 +1,5 @@
 FROM ubuntu:18.04
 
-# ------------------ General Stuff
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     curl \
@@ -12,8 +11,7 @@ RUN apt-get update && apt-get install -y \
     golang \
     python \
     make
-    #python-pip \
-    #python2.7 \
+
 
 RUN pip3 install \
     pyyaml \
@@ -26,6 +24,7 @@ RUN pip3 install \
     google-auth-oauthlib \
     zeep \
     cs \
+    http \
     boto3
 
 
@@ -42,7 +41,7 @@ RUN go get -u -d github.com/ines-cruz/json_exporter/
 
 
     # ------------------ Clone TS repo and get bash
-RUN  echo " cd go/src/github.com/ines-cruz/json_exporter" > ~/.bashrc 
+RUN  echo " cd go/src/github.com/ines-cruz/json_exporter" > ~/.bashrc
 
 
 

@@ -13,7 +13,7 @@ make build
 # Example Usage
 
 ```sh
-$ cat example/data.json
+$ cat example/output.json
 {
     "counter": 1234,
     "values": [
@@ -55,10 +55,10 @@ $ cat example/config.yml
     count: $.count # dynamic value
     boolean: $.some_boolean
 
-$ python -m SimpleHTTPServer 8000 &
-Serving HTTP on 0.0.0.0 port 8000 ...
+$ python -m SimpleHTTPServer 8080 &
+Serving HTTP on 0.0.0.0 port 8080 ...
 
-$ ./json_exporter http://localhost:8000/example/data.json example/config.yml &
+$ ./json_exporter http://localhost:8080/example/output.json example/config.yml &
 INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_global_value>
 INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_boolean>
 INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_active>
