@@ -24,7 +24,6 @@ RUN pip3 install \
     google-auth-oauthlib \
     zeep \
     cs \
-    http \
     boto3
 
 
@@ -58,3 +57,5 @@ RUN go get -u \
 RUN pip3 install --upgrade requests
 
 EXPOSE  7979
+
+ENTRYPOINT  [ "" ]

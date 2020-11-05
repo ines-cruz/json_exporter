@@ -17,18 +17,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
-
+	"google.golang.org/api/iterator"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kawamuray/jsonpath"
 	"github.com/ines-cruz/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
+	"encoding/json"
+	"io"
+	"io/ioutil"
+	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/option"
+	"os"
 )
 
 func MakeMetricName(parts ...string) string {
@@ -134,16 +139,35 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 
 func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config config.Config) ([]byte, error) {
   httpClientConfig := config.HTTPClientConfig
-  client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
+  client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
   if err != nil {
     level.Error(logger).Log("msg", "Error generating HTTP client", "err", err) //nolint:errcheck
     return nil, err
   }
-  req, err := http.NewRequest("GET", endpoint, nil)
-  req = req.WithContext(ctx)
-  	ctx := context.Background()
 
+	//Create client
+	//Name of the Google BigQuery DB
+	//credentials in example folder
+			client, err :=bigquery.NewClient(context.Background(),  "cobalt-aria-281116", option.WithCredentialsFile("example/credentials.json"))
+			if err != nil {
+				fmt.Println("bigquery.NewClient", err)
+			}
+			defer client.Close()
 
+			rows, err := query(ctx, client)
+			if err != nil {
+				fmt.Println(err)
+			}
+			var ex = printResults(os.Stdout, rows)
+
+			thisMap := make(map[string](map[string]float64))
+			thisMap["values"]=ex
+
+			file, _ := json.MarshalIndent( thisMap, "", "")
+
+			_ = ioutil.WriteFile("example/output.json", file, 0644)
+			req, err := http.NewRequest("GET", endpoint, nil)
+		  req = req.WithContext(ctx)
 	if err != nil {
     	level.Error(logger).Log("msg", "Failed to create request", "err", err)
 		return nil, err
@@ -154,20 +178,20 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 	if req.Header.Get("Accept") == "" {
 		req.Header.Add("Accept", "application/json")
 	}
-	resp, err := client.Do(req)
+	resp, err := client2.Do(req)
   defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return nil, errors.New(resp.Status)
 }
-data, err := ioutil.ReadAll(resp.Body)
+data2, err := ioutil.ReadAll(resp.Body)
 if err != nil {
   return nil, err}
 
-	return data, nil
+	return data2, nil
 }
 
-/*
+
 func query(ctx context.Context, client *bigquery.Client) (*bigquery.RowIterator, error) {
 
 	q := client.Query(`
@@ -266,4 +290,4 @@ func getMem(sys []bigquery.Value, sumMem float64 ) float64{
 		sumMem=example+sumMem
 	}
 	return sumMem
-}*/
+}

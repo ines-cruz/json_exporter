@@ -15,46 +15,28 @@ make build
 ```sh
 $ cat example/output.json
 {
-    "counter": 1234,
-    "values": [
-        {
-            "id": "id-A",
-            "count": 1,
-            "some_boolean": true,
-            "state": "ACTIVE"
-        },
-        {
-            "id": "id-B",
-            "count": 2,
-            "some_boolean": true,
-            "state": "INACTIVE"
-        },
-        {
-            "id": "id-C",
-            "count": 3,
-            "some_boolean": false,
-            "state": "ACTIVE"
-        },
-    ]
+"values": {
+"sumCores": 44223,
+"sumCost": 1972.7199999998902,
+"sumGPU": 579,
+"sumMem": 14959926,
+"sumVM": 3764
+}
 }
 
 $ cat example/config.yml
-- name: example_global_value
-  path: $.counter
-  labels:
-    environment: beta # static label
-
-- name: example_value
+metrics:
+- name: testBQ
   type: object
-  path: $.values[*]?(@.state == "ACTIVE")
-  labels:
-    environment: beta # static label
-    id: $.id          # dynamic label
+  path: $.values
   values:
-    active: 1      # static value
-    count: $.count # dynamic value
-    boolean: $.some_boolean
+    spent: $.sumCost     # static value
+    vmnum: $.sumVM # dynamic value
+    sumMemory: $.sumMem
+    sumCores: $.sumCores
+    sumGPU: $.sumGPU
 
+For more detailed examples refer Prometheus community [documentation](https://github.com/prometheus-community/json_exporter/blob/master/README.md)
 $ python -m SimpleHTTPServer 8080 &
 Serving HTTP on 0.0.0.0 port 8080 ...
 
@@ -66,24 +48,79 @@ INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_count>
 127.0.0.1 - - [08/Feb/2016 22:44:38] "GET /example/data.json HTTP/1.1" 200 -
 
 
-$ curl http://localhost:7979/metrics | grep ^example
-example_global_value{environment="beta"} 1234
-example_value_active{environment="beta",id="id-A"} 1
-example_value_active{environment="beta",id="id-C"} 1
-example_value_boolean{environment="beta",id="id-A"} 1
-example_value_boolean{environment="beta",id="id-C"} 0
-example_value_count{environment="beta",id="id-A"} 1
-example_value_count{environment="beta",id="id-C"} 3
+$ curl "http://localhost:7979/probe?target=http://localhost:8080/example/output.json"
+127.0.0.1 - - [05/Nov/2020 12:45:43] "GET /example/output.json HTTP/1.1" 200 -
+# HELP testBQ_spent testBQ
+# TYPE testBQ_spent untyped
+testBQ_spent 1972.7199999998902
+# HELP testBQ_sumCores testBQ
+# TYPE testBQ_sumCores untyped
+testBQ_sumCores 44223
+# HELP testBQ_sumGPU testBQ
+# TYPE testBQ_sumGPU untyped
+testBQ_sumGPU 579
+# HELP testBQ_sumMemory testBQ
+# TYPE testBQ_sumMemory untyped
+testBQ_sumMemory 1.4959926e+07
+# HELP testBQ_vmnum testBQ
+# TYPE testBQ_vmnum untyped
+testBQ_vmnum 3764
 ```
 
 # Docker
 
 ```console
-docker run \
-  -v config.yml:/config.yml
-  quay.io/prometheuscommunity/json-exporter \
-    http://example.com/target.json \
-    /config.yml
+$ docker run --rm -it -p 9090:9090 -v $PWD/example/prometheus.yml:/etc/prometheus/prometheus.yml --network host prom/prometheus
+```
+
+
+#Prometheus
+```console
+
+$ cd prometheus
+$ ./prometheus --web.listen-address="0.0.0.0:9090"
+
+$ cat prometheus.yml
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets: []
+    scheme: http
+    timeout: 10s
+    api_version: v1
+rule_files:
+- /etc/prometheus/alerts.yml
+scrape_configs:
+- job_name: prometheus
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+  - targets:
+    - localhost:9090
+    - localhost:7979
+- job_name: json_exporter
+  honor_timestamps: true
+  scrape_interval: 5s
+  metrics_path: /probe
+  scheme: http
+  static_configs:
+  - targets:
+    - localhost:7979
+  params:
+    target: ["http://localhost:8080/example/output.json"]
+  relabel_configs:
+    - source_labels: [__param_target]
+      target_label: endpoint
+      action: replace
+
 ```
 
 # See Also
