@@ -32,30 +32,16 @@ ENV PATH=$PATH:$GOPATH/bin
 
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
+RUN go get -u github.com/ines-cruz/json_exporter
 
 
-ADD . /go/src/github.com/ines-cruz/json_exporter
+RUN git clone https://github.com/ines-cruz/json_exporter.git
+RUN cd json_exporter/  && make build
 
-RUN go get -u -d github.com/ines-cruz/json_exporter/
+RUN wget https://github.com/prometheus/prometheus/releases/download/v2.22.0/prometheus-2.22.0.linux-386.tar.gz
+RUN tar -xf prometheus-*.tar.gz
 
-
-    # ------------------ Clone TS repo and get bash
-RUN  echo " cd go/src/github.com/ines-cruz/json_exporter" > ~/.bashrc
-
-
-
-
-RUN go get -u \
-    cloud.google.com/go/ \
-    google.golang.org/api/option \
-    google.golang.org/api/googleapi \
-    google.golang.org/api/bigquery/v2 \
-    go.opencensus.io/trace
-
-
-
-RUN pip3 install --upgrade requests
+RUN cp json_exporter/example/prometheus.yml prometheus-*/prometheus.yml
 
 EXPOSE  7979
-
-ENTRYPOINT  [ "" ]
+ENTRYPOINT ["json_exporter"]
