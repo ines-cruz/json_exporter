@@ -28,11 +28,15 @@ import (
 func Run() {
 	promlogConfig := &promlog.Config{}
 	logger := promlog.New(promlogConfig)
-
+	config, err := config.LoadConfig("example/config.yml")
+	if err != nil {
+		level.Error(logger).Log("msg", "Error loading config", "err", err) //nolint:errcheck
+//		os.Exit(1)
+	}
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
-		probeHandler(w, req, logger, config.LoadConfig("example/config.yml"))
+		probeHandler(w, req, logger, config)
 	})
 	if err := http.ListenAndServe(":7979", nil); err != nil {
 		level.Error(logger).Log("msg", "failed to start the server", "err", err) //nolint:errcheck
