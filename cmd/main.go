@@ -14,7 +14,6 @@ package cmd
 import (
 	"context"
 	"net/http"
-	"os"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
