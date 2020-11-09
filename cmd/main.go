@@ -27,7 +27,7 @@ import (
 func Run() {
 	promlogConfig := &promlog.Config{}
 	logger := promlog.New(promlogConfig)
-	config, err := config.LoadConfig("example/config.yml")
+	config, err := config.LoadConfig("examples/config.yml")
 	if err != nil {
 		level.Error(logger).Log("msg", "Error loading config", "err", err) //nolint:errcheck
 //		os.Exit(1)

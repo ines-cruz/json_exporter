@@ -148,7 +148,7 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 	//Create client
 	//Name of the Google BigQuery DB
 	//credentials in example folder
-			client, err :=bigquery.NewClient(context.Background(),  "cobalt-aria-281116", option.WithCredentialsFile("example/credentials.json"))
+			client, err :=bigquery.NewClient(context.Background(),  "cobalt-aria-281116", option.WithCredentialsFile("examples/credentials.json"))
 			if err != nil {
 				fmt.Println("bigquery.NewClient", err)
 			}
@@ -165,7 +165,7 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 
 			file, _ := json.MarshalIndent( thisMap, "", "")
 
-			_ = ioutil.WriteFile("example/output.json", file, 0644)
+			_ = ioutil.WriteFile("examples/output.json", file, 0644)
 			req, err := http.NewRequest("GET", endpoint, nil)
 		  req = req.WithContext(ctx)
 	if err != nil {
