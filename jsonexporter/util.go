@@ -139,7 +139,7 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 
 func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config config.Config) ([]byte, error) {
   httpClientConfig := config.HTTPClientConfig
-  client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
+  client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
   if err != nil {
     level.Error(logger).Log("msg", "Error generating HTTP client", "err", err) //nolint:errcheck
     return nil, err
