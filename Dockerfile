@@ -1,30 +1,26 @@
-FROM ubuntu:18.04
-EXPOSE  7979 8080
-# Set working directory as "/"
-WORKDIR /
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    python3-pip \
-    nano \
-    git \
-    jq \
-    golang \
-    python \
-    make
 
 
+FROM golang:1.15 AS build
 
-ENV GOPATH /root/go
-ENV PATH=$PATH:$GOPATH/bin
+# Install tools required for project
+# Run `docker build --no-cache .` to update dependencies
+RUN apt install git
+RUN go get github.com/ines-cruz/json_exporter
 
+# List project dependencies with Gopkg.toml and Gopkg.lock
+# These layers are only re-built when Gopkg files are updated
+COPY Gopkg.lock Gopkg.toml /go/src/json_exporter/
+WORKDIR /go/src/json_exporter/
+# Install library dependencies
+RUN dep ensure -vendor-only
 
-RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH" && go get -u github.com/ines-cruz/json_exporter
+# Copy the entire project and build it
+# This layer is rebuilt when a file changes in the project directory
+COPY . /go/src/json_exporter/
+RUN go build -o /bin/json_exporter
 
-
-RUN  git clone https://github.com/ines-cruz/json_exporter.git
-WORKDIR json_exporter
-RUN make build
-
-
-CMD ["/bin/bash"]
+# This results in a single layer image
+FROM scratch
+COPY --from=build /bin/json_exporter /bin/json_exporter
+ENTRYPOINT ["/bin/json_exporter"]
+CMD ["--help"]
