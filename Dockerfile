@@ -4,7 +4,7 @@ FROM golang:1.15 AS build
 
 # Install tools required for project
 # Run `docker build --no-cache .` to update dependencies
-RUN apt install git && apt install curl
+RUN apt install git 
 RUN go get -u github.com/ines-cruz/json_exporter
 
 
@@ -20,13 +20,10 @@ RUN go build -o /bin/json_exporter
 # This results in a single layer image
 FROM ubuntu:18.04
 
-
+RUN apt-get update && apt-get -y install curl
 COPY --from=build bin/json_exporter /json_exporter
 
 
-#ENTRYPOINT ["/json_exporter"]
+ENTRYPOINT ["/json_exporter"]
 
-
-CMD python -m SimpleHTTPServer 8080 &
-CMD ./json_exporter http://localhost:8080/example/output.json example/config.yml &
-CMD curl "http://localhost:7979/probe?target=http://localhost:8080/example/output.json"
+CMD [" --config.file examples/config.yml "]
