@@ -22,9 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"google.golang.org/api/iterator"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-	"github.com/kawamuray/jsonpath"
+  "github.com/kawamuray/jsonpath"
 	"github.com/ines-cruz/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
@@ -137,11 +135,11 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 	return metrics, nil
 }
 
-func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config config.Config) ([]byte, error) {
+func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
   httpClientConfig := config.HTTPClientConfig
-  client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
+  client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
   if err != nil {
-    level.Error(logger).Log("msg", "Error generating HTTP client", "err", err) //nolint:errcheck
+		fmt.Println("Error generating HTTP client")
     return nil, err
   }
 
@@ -169,7 +167,7 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 			req, err := http.NewRequest("GET", endpoint, nil)
 		  req = req.WithContext(ctx)
 	if err != nil {
-    	level.Error(logger).Log("msg", "Failed to create request", "err", err)
+		fmt.Println("Failed to create request")
 		return nil, err
 	}
   for key, value := range config.Headers {

@@ -14,54 +14,45 @@ package cmd
 import (
 	"context"
 	"net/http"
-
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"fmt"
 	"github.com/ines-cruz/json_exporter/config"
 	"github.com/ines-cruz/json_exporter/jsonexporter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/promlog"
 )
 
 func Run() {
-	promlogConfig := &promlog.Config{}
-	logger := promlog.New(promlogConfig)
-	config, err := config.LoadConfig("examples/config.yml")
-	if err != nil {
-		level.Error(logger).Log("msg", "Error loading config", "err", err) //nolint:errcheck
-//		os.Exit(1)
-	}
+
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
-		probeHandler(w, req, logger, config)
+		probeHandler(w, req)
 	})
 	if err := http.ListenAndServe(":7979", nil); err != nil {
-		level.Error(logger).Log("msg", "failed to start the server", "err", err) //nolint:errcheck
+		fmt.Println("failed to start the server")
 	}
 }
 
-func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, config config.Config) {
+func probeHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	r = r.WithContext(ctx)
 
 	registry := prometheus.NewPedanticRegistry()
-	metrics, err := jsonexporter.CreateMetricsList(config)
+	config, err := config.LoadConfig("examples/config.yml")
+	metrics, err := jsonexporter.CreateMetricsList( config)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err) //nolint:errcheck
+		fmt.Println("Failed to create metrics list from config")
 	}
 
 	jsonMetricCollector := jsonexporter.JsonMetricCollector{JsonMetrics: metrics}
-	jsonMetricCollector.Logger = logger
 	target := r.URL.Query().Get("target")
 	if target == "" {
 		http.Error(w, "Target parameter is missing", http.StatusBadRequest)
 		return
 	}
-	data, err := jsonexporter.FetchJson(ctx, logger, target, config)
+	data, err := jsonexporter.FetchJson(ctx, target, config)
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
 		return
