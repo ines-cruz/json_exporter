@@ -4,7 +4,7 @@ FROM golang:1.15 AS build
 
 # Install tools required for project
 # Run `docker build --no-cache .` to update dependencies
-RUN apt install git 
+RUN apt install git
 RUN go get -u github.com/ines-cruz/json_exporter
 
 
@@ -26,4 +26,5 @@ COPY --from=build bin/json_exporter /json_exporter
 
 ENTRYPOINT ["/json_exporter"]
 
-CMD [" --config.file examples/config.yml "]
+CMD ["python -m SimpleHTTPServer 8080 &"]
+CMD [" http://localhost:8080/example/output.json example/config.yml & "]
