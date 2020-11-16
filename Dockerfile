@@ -10,7 +10,7 @@ WORKDIR /go/src/json_exporter/
 RUN go get -u github.com/ines-cruz/json_exporter
 
 
-EXPOSE 8080 9090
+EXPOSE 7979 8080 9090
 # Copy the entire project and build it
 # This layer is rebuilt when a file changes in the project directory
 COPY . /go/src/json_exporter/
@@ -47,4 +47,4 @@ CMD ["python" , "-m", "SimpleHTTPServer", "8080", "&"]
 CMD [ "/json_exporter", "http://cloud-tracking.web.cern.ch:8080/example/output.json example/config.yml", "&  "]
 
 #ENTRYPOINT ["curl"]
-CMD curl http://cloud-tracking.web.cern.ch/probe?target=http://cloud-tracking.web.cern.ch:8080/examples/output.json
+CMD curl http://cloud-tracking.web.cern.ch:7979/probe?target=http://cloud-tracking.web.cern.ch:8080/examples/output.json

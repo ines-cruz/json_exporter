@@ -28,7 +28,7 @@ func Run() {
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
 		probeHandler(w, req)
 	})
-	if err := http.ListenAndServe(":7979", nil); err != nil {
+	if err := http.ListenAndServe("cloud-tracking.web.cern.ch:7979", nil); err != nil {
 		fmt.Println("failed to start the server")
 	}
 }
