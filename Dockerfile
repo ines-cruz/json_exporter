@@ -10,7 +10,7 @@ WORKDIR /go/src/json_exporter/
 RUN go get -u github.com/ines-cruz/json_exporter
 
 
-EXPOSE 7979 8080 9090
+EXPOSE 8080 9090
 # Copy the entire project and build it
 # This layer is rebuilt when a file changes in the project directory
 COPY . /go/src/json_exporter/
@@ -29,22 +29,17 @@ COPY --from=build /go/src/json_exporter/ /json_exporter
 
 
 RUN chmod 777 -R /json_exporter
-RUN wget https://github.com/prometheus/prometheus/releases/download/v2.22.0/prometheus-2.22.0.linux-386.tar.gz
-
-
-RUN tar -xf prometheus-*.tar.gz
-
-
+RUN wget https://github.com/prometheus/prometheus/releases/download/v2.22.0/prometheus-2.22.0.linux-386.tar.gz && tar -xf prometheus-*.tar.gz
 
 RUN cp  json_exporter/examples/prometheus.yml prometheus-*/prometheus.yml
 
 USER 1001
 
-CMD ["./prometheus" , "--web.listen-address="cloud-tracking.web.cern.ch:9090"" ,"&"]
+CMD ["./prometheus" , "--web.listen-address="localhost:9090"" ,"&"]
 
 CMD ["python" , "-m", "SimpleHTTPServer", "8080", "&"]
 
-CMD [ "/json_exporter", "http://cloud-tracking.web.cern.ch:8080/example/output.json example/config.yml", "&  "]
+CMD [ "/json_exporter", "http://localhost:8080/examples/output.json examples/config.yml", "&  "]
 
 #ENTRYPOINT ["curl"]
-CMD curl http://cloud-tracking.web.cern.ch:7979/probe?target=http://cloud-tracking.web.cern.ch:8080/examples/output.json
+CMD curl http://cloud-tracking.web.cern.ch/probe?target=localhost:8080/examples/output.json
