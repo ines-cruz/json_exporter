@@ -1,5 +1,4 @@
 
-
 FROM golang:1.15 AS build
 
 # Install tools required for project
@@ -10,7 +9,7 @@ WORKDIR /go/src/json_exporter/
 RUN go get -u github.com/ines-cruz/json_exporter
 
 
-EXPOSE 8080 9090
+EXPOSE 9090 8080
 # Copy the entire project and build it
 # This layer is rebuilt when a file changes in the project directory
 COPY . /go/src/json_exporter/
@@ -34,12 +33,12 @@ RUN wget https://github.com/prometheus/prometheus/releases/download/v2.22.0/prom
 RUN cp  json_exporter/examples/prometheus.yml prometheus-*/prometheus.yml
 
 USER 1001
+WORKDIR prometheus-2.22.0.linux-386
+CMD /prometheus --web.listen-address="cloud-tracking.web.cern.ch:9090" &
 
-CMD ["./prometheus" , "--web.listen-address="localhost:9090"" ,"&"]
+WORKDIR /
+CMD python -m SimpleHTTPServer 8080 &
 
-CMD ["python" , "-m", "SimpleHTTPServer", "8080", "&"]
+CMD /json_exporter cloud-tracking.web.cern.ch:8080/examples/output.json examples/config.yml &
 
-CMD [ "/json_exporter", "http://localhost:8080/examples/output.json examples/config.yml", "&  "]
-
-#ENTRYPOINT ["curl"]
-CMD curl http://cloud-tracking.web.cern.ch/probe?target=localhost:8080/examples/output.json
+CMD  curl localhost:7979/probe?target=cloud-tracking.web.cern.ch:8080/examples/output.json
