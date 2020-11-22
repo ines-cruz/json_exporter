@@ -137,15 +137,17 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 
 func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
   httpClientConfig := config.HTTPClientConfig
-  client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
+  client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true,false)
   if err != nil {
 		fmt.Println("Error generating HTTP client")
     return nil, err
   }
 
+// GCP
 	//Create client
 	//Name of the Google BigQuery DB
 	//credentials in example folder
+
 			client, err :=bigquery.NewClient(context.Background(),  "cobalt-aria-281116", option.WithCredentialsFile("examples/credentials.json"))
 			if err != nil {
 				fmt.Println("bigquery.NewClient", err)
@@ -164,6 +166,45 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 			file, _ := json.MarshalIndent( thisMap, "", "")
 
 			_ = ioutil.WriteFile("examples/output.json", file, 0644)
+
+
+
+/*
+		//Aws
+
+		client := return boto3.client(
+        api,
+        aws_access_key_id=aux.configs["aws"]["accessKey"],
+        aws_secret_access_key=aux.configs["aws"]["secretKey"],
+        region_name="us-east-1" )
+			defer client.Close()
+
+
+			response = ce.get_cost_and_usage(
+		        TimePeriod={
+		            "Start": starting,
+		            "End":  ending
+		        },
+		        Granularity="DAILY",
+		        Metrics=["UnblendedCost"],
+		        GroupBy=[
+		            {
+		                "Type": "DIMENSION",
+		                "Key": "LINKED_ACCOUNT"
+		            }
+		        ],
+		        Filter={
+		            "Dimensions": {
+		                "Key": "LINKED_ACCOUNT",
+		                "Values": list(__account_mappings().keys())
+		            }
+		        }
+		    )
+
+		    return list(map(__extract_cost, __extract_accounts(response)))
+
+	*/
+
 			req, err := http.NewRequest("GET", endpoint, nil)
 		  req = req.WithContext(ctx)
 	if err != nil {
