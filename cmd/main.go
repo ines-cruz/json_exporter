@@ -28,9 +28,6 @@ func Run() {
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
 		probeHandler(w, req)
 	})
-	if err := http.ListenAndServe("localhost", nil); err != nil {
-		fmt.Println("failed to start the server")
-	}
 }
 
 func probeHandler(w http.ResponseWriter, r *http.Request) {

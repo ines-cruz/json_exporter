@@ -46,4 +46,4 @@ EXPOSE 9090 8080 7979
 
 #CMD  ./json_exporter localhost:8080/examples/output.json examples/config.yml &
 
-#CMD curl localhost:7979/probe?target=0.0.0.0:8080/examples/output.json
+#CMD curl localhost:7979/probe?target=localhost:8080/examples/output.json
