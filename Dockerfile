@@ -12,6 +12,8 @@ RUN apt-get update && apt-get -y install \
     python \
     golang
 
+USER root
+
 
 
 
@@ -34,7 +36,6 @@ RUN cd . &&  cp  /go/src/json_exporter/examples/prometheus.yml /go/src/prometheu
 
 
 EXPOSE 9090 8080 7979
-USER 1001
 
 
 
@@ -45,4 +46,4 @@ USER 1001
 
 #CMD  ./json_exporter test-cloudtracking.web.cern.ch:8080/examples/output.json examples/config.yml &
 
-#CMD curl test-cloudtracking.web.cern.ch/probe?target=test-cloudtracking.web.cern.ch:8080/examples/output.json 
+#CMD curl test-cloudtracking.web.cern.ch:7979/probe?target=test-cloudtracking.web.cern.ch:8080/examples/output.json
