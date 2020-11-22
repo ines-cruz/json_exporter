@@ -17,7 +17,7 @@ scrape_configs:
   scheme: http
   static_configs:
   - targets:
-    - 172.30.32.29:9090
+    - 0.0.0.0:9090
     - 172.30.32.29:7979
 - job_name: json_exporter
   honor_timestamps: true
@@ -28,7 +28,7 @@ scrape_configs:
   - targets:
     - 172.30.32.29:7979
   params:
-    target: ["172.30.32.29:8080/examples/output.json"]
+    target: ["localhost:8080/examples/output.json"]
   relabel_configs:
     - source_labels: [__param_target]
       target_label: endpoint

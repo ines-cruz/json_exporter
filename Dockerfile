@@ -29,9 +29,9 @@ RUN go build -o json_exporter &&  make build
 
 
 RUN chmod 777 -R json_exporter
-RUN cd ~ && cd /go/src &&  wget https://github.com/prometheus/prometheus/releases/download/v2.22.0/prometheus-2.22.0.linux-386.tar.gz && tar -xf prometheus-*.tar.gz
+RUN cd ~ && cd /go/src &&  wget https://github.com/prometheus/prometheus/releases/download/v2.22.2/prometheus-2.22.2.linux-amd64.tar.gz && tar -xf prometheus-*.tar.gz
 
-RUN cd . &&  cp  /go/src/json_exporter/examples/prometheus.yml /go/src/prometheus-2.22.0.linux-386/prometheus.yml
+RUN cd . &&  cp  /go/src/json_exporter/examples/prometheus.yml /go/src/prometheus-2.22.2.linux-amd64/prometheus.yml
 
 
 
@@ -39,11 +39,11 @@ EXPOSE 9090 8080 7979
 
 
 
-#CMD ./prometheus --web.listen-address="172.30.32.29:9090" &
+#CMD ./prometheus --web.listen-address="0.0.0.0:9090" &
 
 
 #CMD python -m SimpleHTTPServer 8080 &
 
-#CMD  ./json_exporter 172.30.32.29:8080/examples/output.json examples/config.yml &
+#CMD  ./json_exporter localhost:8080/examples/output.json examples/config.yml &
 
-#CMD curl 172.30.32.29:7979/probe?target=172.30.32.29:8080/examples/output.json
+#CMD curl 172.30.32.29:7979/probe?target=0.0.0.0:8080/examples/output.json
