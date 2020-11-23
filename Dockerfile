@@ -39,11 +39,11 @@ EXPOSE 9090 8080 7979
 
 
 
-#CMD ./prometheus --web.listen-address="0.0.0.0:9090" &
+RUN cd prometheus-2.22.2.linux-amd64 && CMD ./prometheus --web.listen-address="0.0.0.0:9090" &
 
 
-#CMD python -m SimpleHTTPServer 8080 &
+CMD python -m SimpleHTTPServer 8080 &
 
-#CMD  ./json_exporter localhost:8080/examples/output.json examples/config.yml &
+CMD  ./json_exporter 0.0.0.0:8080/examples/output.json examples/config.yml &
 
-#CMD curl localhost:7979/probe?target=localhost:8080/examples/output.json
+CMD curl http://test-cloudtracking.web.cern.ch:7979/probe?target=localhost:8080/examples/output.json

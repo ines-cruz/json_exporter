@@ -18,7 +18,7 @@ scrape_configs:
   static_configs:
   - targets:
     - 0.0.0.0:9090
-    - localhost:7979
+    - test-cloudtracking.web.cern.ch:7979
 - job_name: json_exporter
   honor_timestamps: true
   scrape_interval: 5s
@@ -26,7 +26,7 @@ scrape_configs:
   scheme: http
   static_configs:
   - targets:
-    - localhost:7979
+    - test-cloudtracking.web.cern.ch:7979
   params:
     target: ["localhost:8080/examples/output.json"]
   relabel_configs:
