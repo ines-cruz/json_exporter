@@ -47,4 +47,4 @@ CMD python3 -m http.server 8080  --bind 0.0.0.0 &
 
 CMD  ./json_exporter 0.0.0.0:8080/jsonexporter/examples/output.json jsonexporter/examples/config.yml &
 
-CMD curl http://http://0.0.0.0:7979/examples/output.json
+CMD curl http://0.0.0.0:7979/examples/output.json
