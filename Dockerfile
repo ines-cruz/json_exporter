@@ -25,7 +25,7 @@ WORKDIR  /go/src/json_exporter/
 # Copy the entire project and build it
 # This layer is rebuilt when a file changes in the project directory
 COPY . /go/src/json_exporter/
-RUN go build -o json_exporter &&  make build
+RUN go build -o json_exporter
 
 
 RUN chmod 777 -R json_exporter
@@ -42,9 +42,10 @@ EXPOSE 9090 8080 7979
 RUN cd prometheus-2.22.2.linux-amd64 && CMD ./prometheus --web.listen-address="0.0.0.0:9090" &
 
 
-CMD python3 -m http.server 7979  --bind 0.0.0.0 &
 CMD python3 -m http.server 8080  --bind 0.0.0.0 &
 
-CMD  ./json_exporter 0.0.0.0:8080/jsonexporter/examples/output.json jsonexporter/examples/config.yml &
 
-CMD curl http://0.0.0.0:7979/examples/output.json
+
+CMD make build && ./json_exporter 0.0.0.0:8080/examples/output.json examples/config.yml &
+
+CMD curl http://localhost:7979/probe?target=localhost:8080/examples/output.json

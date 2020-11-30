@@ -15,29 +15,39 @@ import (
 	"context"
 	"net/http"
 	"fmt"
+	"github.com/go-kit/kit/log/level"
 	"github.com/ines-cruz/json_exporter/config"
 	"github.com/ines-cruz/json_exporter/jsonexporter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/promlog"
 )
 
 func Run() {
-
+	promlogConfig := &promlog.Config{}
+		logger := promlog.New(promlogConfig)
+		config, err := config.LoadConfig("examples/config.yml")
+		if err != nil {
+			level.Error(logger).Log("msg", "Error loading config", "err", err) //nolint:errcheck
+		}
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
-		probeHandler(w, req)
+		probeHandler(w, req, config)
 	})
+
+	if err := http.ListenAndServe(":7979", nil); err != nil {
+		level.Error(logger).Log("msg", "failed to start the server", "err", err) //nolint:errcheck
+	}
 }
 
-func probeHandler(w http.ResponseWriter, r *http.Request) {
+func probeHandler(w http.ResponseWriter, r *http.Request, config config.Config) {
 
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	r = r.WithContext(ctx)
 
 	registry := prometheus.NewPedanticRegistry()
-	config, err := config.LoadConfig("examples/config.yml")
 	metrics, err := jsonexporter.CreateMetricsList( config)
 	if err != nil {
 		fmt.Println("Failed to create metrics list from config")

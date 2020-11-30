@@ -4,15 +4,15 @@ alerting:
   - static_configs:
     - targets: []
     scheme: http
-    timeout: 10s
+    timeout: 30s
     api_version: v1
 rule_files:
 - /etc/prometheus/alerts.yml
 scrape_configs:
 - job_name: prometheus
   honor_timestamps: true
-  scrape_interval: 15s
-  scrape_timeout: 10s
+  scrape_interval: 3600s
+  scrape_timeout: 30s
   metrics_path: /metrics
   scheme: http
   static_configs:
@@ -21,14 +21,14 @@ scrape_configs:
     - localhost:7979
 - job_name: json_exporter
   honor_timestamps: true
-  scrape_interval: 5s
+  scrape_interval: 3600s
   metrics_path: /probe
   scheme: http
   static_configs:
   - targets:
     - localhost:7979
   params:
-    target: ["localhost:8080/josnexporter/examples/output.json"]
+    target: ["localhost:8080/examples/output.json"]
   relabel_configs:
     - source_labels: [__param_target]
       target_label: endpoint
