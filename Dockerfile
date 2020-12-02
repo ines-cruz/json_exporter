@@ -37,15 +37,7 @@ RUN cd . &&  cp  /go/src/json_exporter/examples/prometheus.yml /go/src/prometheu
 
 EXPOSE 9090 8080 7979
 
+ADD start.sh /
+RUN chmod +x /start.sh
 
-
-RUN cd prometheus-2.22.2.linux-amd64 && CMD ./prometheus --web.listen-address="0.0.0.0:9090" &
-
-
-CMD python3 -m http.server 8080  --bind 0.0.0.0 &
-
-
-
-CMD make build && ./json_exporter 0.0.0.0:8080/examples/output.json examples/config.yml &
-
-CMD curl http://localhost:7979/probe?target=localhost:8080/examples/output.json
+CMD ["/start.sh"]
