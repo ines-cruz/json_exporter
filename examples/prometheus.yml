@@ -9,24 +9,16 @@ alerting:
 rule_files:
 - /etc/prometheus/alerts.yml
 scrape_configs:
-- job_name: prometheus
-  honor_timestamps: true
-  scrape_interval: 3600s
-  scrape_timeout: 30s
-  metrics_path: /metrics
-  scheme: http
-  static_configs:
-  - targets:
-    - localhost:9090
-    - localhost:7979
 - job_name: json_exporter
   honor_timestamps: true
   scrape_interval: 3600s
+  scrape_timeout: 30s
   metrics_path: /probe
   scheme: http
   static_configs:
   - targets:
     - localhost:7979
+    - localhost:8080
   params:
     target: ["localhost:8080/examples/output.json"]
   relabel_configs:
