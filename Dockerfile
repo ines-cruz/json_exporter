@@ -15,10 +15,7 @@ RUN apt-get update && apt-get -y install \
 USER root
 
 
-
-
 RUN go get -u  github.com/ines-cruz/json_exporter
-
 
 WORKDIR  /go/src/json_exporter/
 
@@ -27,12 +24,11 @@ WORKDIR  /go/src/json_exporter/
 COPY . /go/src/json_exporter/
 RUN go build -o json_exporter
 
-
 RUN chmod 777 -R json_exporter
 RUN cd ~ && cd /go/src &&  wget https://github.com/prometheus/prometheus/releases/download/v2.22.2/prometheus-2.22.2.linux-amd64.tar.gz && tar -xf prometheus-*.tar.gz
 
-RUN cd . &&  cp  /go/src/json_exporter/examples/prometheus.yml /go/src/prometheus-2.22.2.linux-amd64/prometheus.yml
 
+RUN cd . &&  cp  /go/src/json_exporter/examples/prometheus.yml /go/src/prometheus-2.22.2.linux-amd64/prometheus.yml
 
 
 EXPOSE 9090 8080 7979
