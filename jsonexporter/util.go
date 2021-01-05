@@ -14,24 +14,24 @@
 package jsonexporter
 
 import (
+	"cloud.google.com/go/bigquery"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
-	"net/http"
-	"strconv"
-	"strings"
-	"google.golang.org/api/iterator"
-  "github.com/kawamuray/jsonpath"
 	"github.com/ines-cruz/json_exporter/config"
+	"github.com/kawamuray/jsonpath"
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
-	"encoding/json"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 	"io"
 	"io/ioutil"
-	"cloud.google.com/go/bigquery"
-	"google.golang.org/api/option"
+	"math"
+	"net/http"
 	"os"
+	"strconv"
+	"strings"
 )
 
 func MakeMetricName(parts ...string) string {
@@ -101,20 +101,20 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 				LabelsJsonPaths: variableLabelsValues,
 			}
 			metrics = append(metrics, jsonMetric)
-    case config.ObjectScrape:
-      for subName, valuePath := range metric.Values {
-        name := MakeMetricName(metric.Name, subName)
-        constLabels := make(map[string]string)
-        var variableLabels, variableLabelsValues []string
-        for k, v := range metric.Labels {
-          if len(v) < 1 || v[0] != '$' {
-            // Static value
-            constLabels[k] = v
-          } else {
-            variableLabels = append(variableLabels, k)
-            variableLabelsValues = append(variableLabelsValues, v)
-          }
-        }
+		case config.ObjectScrape:
+			for subName, valuePath := range metric.Values {
+				name := MakeMetricName(metric.Name, subName)
+				constLabels := make(map[string]string)
+				var variableLabels, variableLabelsValues []string
+				for k, v := range metric.Labels {
+					if len(v) < 1 || v[0] != '$' {
+						// Static value
+						constLabels[k] = v
+					} else {
+						variableLabels = append(variableLabels, k)
+						variableLabelsValues = append(variableLabelsValues, v)
+					}
+				}
 				jsonMetric := JsonMetric{
 					Desc: prometheus.NewDesc(
 						name,
@@ -136,114 +136,115 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 }
 
 func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
-  httpClientConfig := config.HTTPClientConfig
-  client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
-  if err != nil {
+	httpClientConfig := config.HTTPClientConfig
+	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
+	if err != nil {
 		fmt.Println("Error generating HTTP client")
-    return nil, err
-  }
+		return nil, err
+	}
 
-// GCP
+	// GCP
 	//Create client
 	//Name of the Google BigQuery DB
 	//credentials in example folder
+	api, exists := os.LookupEnv("key")
+	if !exists {
+		fmt.Println("No env variables")
+	}
 
-			client, err :=bigquery.NewClient(context.Background(),  "cobalt-aria-281116", option.WithCredentialsFile("examples/credentials.json"))
-			if err != nil {
-				fmt.Println("bigquery.NewClient", err)
-			}
-			defer client.Close()
+	client, err := bigquery.NewClient(context.Background(), "billing-cern", option.WithAPIKey(api))
+	if err != nil {
+		fmt.Println("bigquery.NewClient", err)
+	}
+	defer client.Close()
 
-			rows, err := query(ctx, client)
-			if err != nil {
-				fmt.Println(err)
-			}
-			var ex = printResults(os.Stdout, rows)
+	rows, err := query(ctx, client)
+	if err != nil {
+		fmt.Println(err)
+	}
+	var ex = printResults(os.Stdout, rows)
 
-			thisMap := make(map[string](map[string]float64))
-			thisMap["values"]=ex
+	thisMap := make(map[string](map[string]float64))
+	thisMap["values"] = ex
 
-			file, _ := json.MarshalIndent( thisMap, "", "")
+	file, _ := json.MarshalIndent(thisMap, "", "")
 
-			_ = ioutil.WriteFile("examples/output.json", file, 0644)
+	_ = ioutil.WriteFile("examples/output.json", file, 0644)
 
+	/*
+	   		//Aws
 
-
-/*
-		//Aws
-
-		client := return boto3.client(
-        api,
-        aws_access_key_id=aux.configs["aws"]["accessKey"],
-        aws_secret_access_key=aux.configs["aws"]["secretKey"],
-        region_name="us-east-1" )
-			defer client.Close()
+	   		client := return boto3.client(
+	           api,
+	           aws_access_key_id=aux.configs["aws"]["accessKey"],
+	           aws_secret_access_key=aux.configs["aws"]["secretKey"],
+	           region_name="us-east-1" )
+	   			defer client.Close()
 
 
-			response = ce.get_cost_and_usage(
-		        TimePeriod={
-		            "Start": starting,
-		            "End":  ending
-		        },
-		        Granularity="DAILY",
-		        Metrics=["UnblendedCost"],
-		        GroupBy=[
-		            {
-		                "Type": "DIMENSION",
-		                "Key": "LINKED_ACCOUNT"
-		            }
-		        ],
-		        Filter={
-		            "Dimensions": {
-		                "Key": "LINKED_ACCOUNT",
-		                "Values": list(__account_mappings().keys())
-		            }
-		        }
-		    )
+	   			response = ce.get_cost_and_usage(
+	   		        TimePeriod={
+	   		            "Start": starting,
+	   		            "End":  ending
+	   		        },
+	   		        Granularity="DAILY",
+	   		        Metrics=["UnblendedCost"],
+	   		        GroupBy=[
+	   		            {
+	   		                "Type": "DIMENSION",
+	   		                "Key": "LINKED_ACCOUNT"
+	   		            }
+	   		        ],
+	   		        Filter={
+	   		            "Dimensions": {
+	   		                "Key": "LINKED_ACCOUNT",
+	   		                "Values": list(__account_mappings().keys())
+	   		            }
+	   		        }
+	   		    )
 
-		    return list(map(__extract_cost, __extract_accounts(response)))
+	   		    return list(map(__extract_cost, __extract_accounts(response)))
 
 	*/
 
-			req, err := http.NewRequest("GET", endpoint, nil)
-		  req = req.WithContext(ctx)
+	req, err := http.NewRequest("GET", endpoint, nil)
+	req = req.WithContext(ctx)
 	if err != nil {
 		fmt.Println("Failed to create request")
 		return nil, err
 	}
-  for key, value := range config.Headers {
+	for key, value := range config.Headers {
 		req.Header.Add(key, value)
 	}
 	if req.Header.Get("Accept") == "" {
 		req.Header.Add("Accept", "application/json")
 	}
 	resp, err := client2.Do(req)
-  defer resp.Body.Close()
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return nil, errors.New(resp.Status)
-}
-data2, err := ioutil.ReadAll(resp.Body)
-if err != nil {
-  return nil, err}
+	}
+	data2, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
 	return data2, nil
 }
-
 
 func query(ctx context.Context, client *bigquery.Client) (*bigquery.RowIterator, error) {
 
 	q := client.Query(`
 		SELECT cost,  sku.description, system_labels,
-		FROM `+"`MyBilling.gcp_billing_export_v1_0190AC_ADCAC5_4B89E9` "				)
+		FROM ` + "`MyBilling.gcp_billing_export_v1_0190AC_ADCAC5_4B89E9` ")
 
 	return q.Read(ctx)
 }
 
-
 // printResults prints results from a query to the _ public dataset.
-func printResults(w io.Writer, iter *bigquery.RowIterator) map[string]float64{
-	var  sumCost float64
+func printResults(w io.Writer, iter *bigquery.RowIterator) map[string]float64 {
+	var sumCost float64
 	var sumGPU float64
 	var sumTot int
 	var sumCores float64
@@ -251,10 +252,9 @@ func printResults(w io.Writer, iter *bigquery.RowIterator) map[string]float64{
 	var sumVM float64
 	d := map[string]float64{}
 
-
 	for {
 
-		sumTot=1+sumTot
+		sumTot = 1 + sumTot
 
 		var row []bigquery.Value
 		err := iter.Next(&row)
@@ -263,70 +263,68 @@ func printResults(w io.Writer, iter *bigquery.RowIterator) map[string]float64{
 			break
 		}
 
-		var	ex float64 =sumCost
-		sumCost=row[0].(float64)
+		var ex float64 = sumCost
+		sumCost = row[0].(float64)
 		sumCost = math.Round(sumCost*100)/100 + ex
-		system_labels:=row[2].([]bigquery.Value)
+		system_labels := row[2].([]bigquery.Value)
 
-		if(len(system_labels) > 0){
+		if len(system_labels) > 0 {
 
-			sumCores=getCores(system_labels, sumCores)
-			sumVM=getVM(system_labels,  sumVM)
-			sumMem=getMem(system_labels,  sumMem)
+			sumCores = getCores(system_labels, sumCores)
+			sumVM = getVM(system_labels, sumVM)
+			sumMem = getMem(system_labels, sumMem)
 
 		}
 		sku := row[1].(string)
 
-		if strings.Contains(sku, "GPU"){
-			sumGPU=1+sumGPU
+		if strings.Contains(sku, "GPU") {
+			sumGPU = 1 + sumGPU
 		}
 
 	}
 
-	d["sumCost"]=  sumCost
-	d["sumGPU"]= sumGPU
-	d["sumCores"]=  sumCores
-	d["sumMem"]=  sumMem
-	d["sumVM"]=  sumVM
-
+	d["sumCost"] = sumCost
+	d["sumGPU"] = sumGPU
+	d["sumCores"] = sumCores
+	d["sumMem"] = sumMem
+	d["sumVM"] = sumVM
 
 	return d
 }
-func getCores(sys []bigquery.Value, sumCores float64) float64{
-	var valCores =fmt.Sprint(sys[0])
+func getCores(sys []bigquery.Value, sumCores float64) float64 {
+	var valCores = fmt.Sprint(sys[0])
 
-	if strings.Contains(valCores,"cores" ) {
+	if strings.Contains(valCores, "cores") {
 		s := strings.Fields(valCores)
-		sCores:= strings.Replace(s[1], "]","", -1)
+		sCores := strings.Replace(s[1], "]", "", -1)
 
-		example, err :=  strconv.ParseFloat(fmt.Sprint(sCores),  64)
-		if(err== nil){
+		example, err := strconv.ParseFloat(fmt.Sprint(sCores), 64)
+		if err == nil {
 			// TODO: Handle error.
 		}
-		sumCores=example+sumCores
+		sumCores = example + sumCores
 	}
 	return sumCores
 }
-func getVM(sys []bigquery.Value, sumVM float64) float64{
-	var valVM =fmt.Sprint(sys[1])
+func getVM(sys []bigquery.Value, sumVM float64) float64 {
+	var valVM = fmt.Sprint(sys[1])
 
-	if strings.Contains(valVM,"machine_spec" ) {
-		sumVM= sumVM+1
+	if strings.Contains(valVM, "machine_spec") {
+		sumVM = sumVM + 1
 	}
 	return sumVM
 }
 
+func getMem(sys []bigquery.Value, sumMem float64) float64 {
+	var valMem = fmt.Sprint(sys[2])
 
-func getMem(sys []bigquery.Value, sumMem float64 ) float64{
-	var valMem =fmt.Sprint(sys[2])
-
-	if strings.Contains(valMem,"memory" ) {
+	if strings.Contains(valMem, "memory") {
 
 		example, err := strconv.ParseFloat(fmt.Sprint(valMem[len(valMem)-5:len(valMem)-1]), 64)
-		if(err== nil){
+		if err == nil {
 			// TODO: Handle error.
 		}
-		sumMem=example+sumMem
+		sumMem = example + sumMem
 	}
 	return sumMem
 }

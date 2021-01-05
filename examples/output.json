@@ -1,9 +1,9 @@
 {
 "values": {
-"sumCores": 109649,
-"sumCost": 4712.290000000723,
-"sumGPU": 1224,
-"sumMem": 26405766,
-"sumVM": 6811
+"sumCores": 111066,
+"sumCost": 4731.360000001042,
+"sumGPU": 1230,
+"sumMem": 27527046,
+"sumVM": 7094
 }
 }

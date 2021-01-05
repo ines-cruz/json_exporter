@@ -16,5 +16,5 @@ python -m SimpleHTTPServer 8080 &
 while (( keepgoing )); do
   ./json_exporter http://localhost:8080/examples/output.json examples/config.yml &
  curl http://localhost:7979/probe?target=http://localhost:8080/examples/output.json
- sleep 900
+ sleep 86400 #once per day
 done

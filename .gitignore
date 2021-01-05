@@ -25,3 +25,5 @@ _testmain.go
 
 /build
 /json_exporter
+
+.env
