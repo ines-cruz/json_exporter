@@ -237,7 +237,7 @@ func query(ctx context.Context, client *bigquery.Client) (*bigquery.RowIterator,
 
 	q := client.Query(`
 		SELECT cost,  sku.description, system_labels,
-		FROM ` + "`MyBilling.gcp_billing_export_v1_0190AC_ADCAC5_4B89E9` ")
+		FROM ` + "`sbsl_cern_billing_info.gcp_billing_export_v1_012C54_B3DAFC_973FAF` ")
 
 	return q.Read(ctx)
 }

@@ -13,7 +13,7 @@ make build
 # Example Usage
 
 ```sh
-$ cat example/output.json
+$ cat examples/output.json
 {
 "values": {
 "sumCores": 44223,
@@ -24,7 +24,7 @@ $ cat example/output.json
 }
 }
 
-$ cat example/config.yml
+$ cat examples/config.yml
 metrics:
 - name: testBQ
   type: object
@@ -40,7 +40,7 @@ For more detailed examples refer Prometheus community [documentation](https://gi
 $ python -m SimpleHTTPServer 8080 &
 Serving HTTP on 0.0.0.0 port 8080 ...
 
-$ ./json_exporter http://localhost:8080/example/output.json example/config.yml &
+$ ./json_exporter http://localhost:8080/examples/output.json examples/config.yml &
 INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_global_value>
 INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_boolean>
 INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_active>
@@ -48,7 +48,7 @@ INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_count>
 127.0.0.1 - - [08/Feb/2016 22:44:38] "GET /example/data.json HTTP/1.1" 200 -
 
 
-$ curl "http://localhost:7979/probe?target=http://localhost:8080/example/output.json"
+$ curl "http://localhost:7979/probe?target=http://localhost:8080/examples/output.json"
 127.0.0.1 - - [05/Nov/2020 12:45:43] "GET /example/output.json HTTP/1.1" 200 -
 # HELP testBQ_spent testBQ
 # TYPE testBQ_spent untyped
