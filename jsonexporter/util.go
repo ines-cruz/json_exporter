@@ -140,7 +140,7 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 
 func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
 	httpClientConfig := config.HTTPClientConfig
-	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
+	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
 	if err != nil {
 		fmt.Println("Error generating HTTP client")
 		return nil, err
@@ -162,7 +162,6 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	// authorized and authenticated on the behalf of
 	// your service account.
 	clientCred := conf.Client(oauth2.NoContext)
-
 	client, err := bigquery.NewClient(context.Background(), "billing-cern", option.WithHTTPClient(clientCred))
 	if err != nil {
 		fmt.Println("bigquery.NewClient", err)
