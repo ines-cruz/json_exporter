@@ -23,10 +23,13 @@ import (
 	"github.com/kawamuray/jsonpath"
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -137,7 +140,7 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 
 func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
 	httpClientConfig := config.HTTPClientConfig
-	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
+	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
 	if err != nil {
 		fmt.Println("Error generating HTTP client")
 		return nil, err
@@ -146,12 +149,21 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	// GCP
 	//Create client
 	//Name of the Google BigQuery DB
-	api, exists := os.LookupEnv("key")
-	if !exists {
-		fmt.Println("No env variables")
+	jsonCred := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+	data, err := ioutil.ReadFile(jsonCred)
+	if err != nil {
+		log.Fatal(err)
 	}
+	conf, err := google.JWTConfigFromJSON(data, "https://www.googleapis.com/auth/bigquery")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Initiate an http.Client. The following GET request will be
+	// authorized and authenticated on the behalf of
+	// your service account.
+	clientCred := conf.Client(oauth2.NoContext)
 
-	client, err := bigquery.NewClient(context.Background(), "billing-cern", option.WithAPIKey(api))
+	client, err := bigquery.NewClient(context.Background(), "billing-cern", option.WithHTTPClient(clientCred))
 	if err != nil {
 		fmt.Println("bigquery.NewClient", err)
 	}
@@ -169,42 +181,6 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	file, _ := json.MarshalIndent(thisMap, "", "")
 
 	_ = ioutil.WriteFile("examples/output.json", file, 0644)
-
-	/*
-	   		//Aws
-
-	   		client := return boto3.client(
-	           api,
-	           aws_access_key_id=aux.configs["aws"]["accessKey"],
-	           aws_secret_access_key=aux.configs["aws"]["secretKey"],
-	           region_name="us-east-1" )
-	   			defer client.Close()
-
-
-	   			response = ce.get_cost_and_usage(
-	   		        TimePeriod={
-	   		            "Start": starting,
-	   		            "End":  ending
-	   		        },
-	   		        Granularity="DAILY",
-	   		        Metrics=["UnblendedCost"],
-	   		        GroupBy=[
-	   		            {
-	   		                "Type": "DIMENSION",
-	   		                "Key": "LINKED_ACCOUNT"
-	   		            }
-	   		        ],
-	   		        Filter={
-	   		            "Dimensions": {
-	   		                "Key": "LINKED_ACCOUNT",
-	   		                "Values": list(__account_mappings().keys())
-	   		            }
-	   		        }
-	   		    )
-
-	   		    return list(map(__extract_cost, __extract_accounts(response)))
-
-	*/
 
 	req, err := http.NewRequest("GET", endpoint, nil)
 	req = req.WithContext(ctx)
