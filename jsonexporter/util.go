@@ -137,7 +137,7 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 
 func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
 	httpClientConfig := config.HTTPClientConfig
-	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
+	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
 	if err != nil {
 		fmt.Println("Error generating HTTP client")
 		return nil, err
@@ -146,7 +146,6 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	// GCP
 	//Create client
 	//Name of the Google BigQuery DB
-	//credentials in example folder
 	api, exists := os.LookupEnv("key")
 	if !exists {
 		fmt.Println("No env variables")
