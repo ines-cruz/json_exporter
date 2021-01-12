@@ -3,8 +3,9 @@ metrics:
   type: object
   path: $.values
   values:
-    spent: $.sumCost     # static value
-    vmnum: $.sumVM # dynamic value
+    spent: $.sumCost
+    vmnum: $.sumVM
     sumMemory: $.sumMem
     sumCores: $.sumCores
     sumGPU: $.sumGPU
+    projectid: $.projectid

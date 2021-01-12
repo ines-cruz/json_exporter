@@ -23,13 +23,10 @@ import (
 	"github.com/kawamuray/jsonpath"
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"io"
 	"io/ioutil"
-	"log"
 	"math"
 	"net/http"
 	"os"
@@ -140,7 +137,7 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 
 func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
 	httpClientConfig := config.HTTPClientConfig
-	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
+	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
 	if err != nil {
 		fmt.Println("Error generating HTTP client")
 		return nil, err
@@ -149,35 +146,26 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	// GCP
 	//Create client
 	//Name of the Google BigQuery DB
-	jsonCred := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
-	data, err := ioutil.ReadFile(jsonCred)
+	key := os.Getenv("key")
+	table := os.Getenv("table")
+	client, err := bigquery.NewClient(ctx, "billing-cern", option.WithAPIKey(key))
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("Client create error: %v\n", err)
 	}
-	conf, err := google.JWTConfigFromJSON(data, "https://www.googleapis.com/auth/bigquery")
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Initiate an http.Client. The following GET request will be
-	// authorized and authenticated on the behalf of
-	// your service account.
-	clientCred := conf.Client(oauth2.NoContext)
-	client, err := bigquery.NewClient(context.Background(), "billing-cern", option.WithHTTPClient(clientCred))
-	if err != nil {
-		fmt.Println("bigquery.NewClient", err)
-	}
-	defer client.Close()
 
-	rows, err := query(ctx, client)
+	row := client.Query(`SELECT cost,  sku.description, system_labels, project.id
+		FROM ` + table + "ORDER BY project.id")
+	rows, err := row.Read(ctx)
 	if err != nil {
-		fmt.Println(err)
-	}
-	var ex = printResults(os.Stdout, rows)
+		fmt.Printf("Error2: %v\n", err)
 
-	thisMap := make(map[string](map[string]float64))
+	}
+	var ex = printResults(rows)
+
+	thisMap := make(map[string]interface{})
 	thisMap["values"] = ex
 
-	file, _ := json.MarshalIndent(thisMap, "", "")
+	file, _ := json.MarshalIndent(thisMap, "[]", "")
 
 	_ = ioutil.WriteFile("examples/output.json", file, 0644)
 
@@ -194,41 +182,40 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 		req.Header.Add("Accept", "application/json")
 	}
 	resp, err := client2.Do(req)
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, errors.New(resp.Status)
-	}
-	data2, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return data2, nil
-}
+	defer func() {
+		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
+			fmt.Println("Failed to discard body", "err", err) //nolint:errcheck
+		}
+		resp.Body.Close()
+	}()
 
-func query(ctx context.Context, client *bigquery.Client) (*bigquery.RowIterator, error) {
+	if resp.StatusCode/100 != 2 {
+		return nil, errors.New(resp.Status)
+	}
 
-	q := client.Query(`
-		SELECT cost,  sku.description, system_labels,
-		FROM ` + "`sbsl_cern_billing_info.gcp_billing_export_v1_012C54_B3DAFC_973FAF` ")
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	return q.Read(ctx)
+	return data, nil
 }
 
 // printResults prints results from a query to the _ public dataset.
-func printResults(w io.Writer, iter *bigquery.RowIterator) map[string]float64 {
+func printResults(iter *bigquery.RowIterator) map[string]interface{} {
 	var sumCost float64
 	var sumGPU float64
-	var sumTot int
 	var sumCores float64
 	var sumMem float64
 	var sumVM float64
-	d := map[string]float64{}
-
+	var projectid string
+	var previous string
+	d := map[string]interface{}{}
 	for {
-
-		sumTot = 1 + sumTot
 
 		var row []bigquery.Value
 		err := iter.Next(&row)
@@ -236,25 +223,30 @@ func printResults(w io.Writer, iter *bigquery.RowIterator) map[string]float64 {
 		if err == iterator.Done {
 			break
 		}
+		projectid = row[3].(string)
 
-		var ex float64 = sumCost
-		sumCost = row[0].(float64)
-		sumCost = math.Round(sumCost*100)/100 + ex
+		sumCost = getSum(row, sumCost, projectid, previous)
+
 		system_labels := row[2].([]bigquery.Value)
 
 		if len(system_labels) > 0 {
 
-			sumCores = getCores(system_labels, sumCores)
-			sumVM = getVM(system_labels, sumVM)
-			sumMem = getMem(system_labels, sumMem)
+			sumCores = getCores(system_labels, sumCores, previous, projectid)
+			sumVM = getVM(system_labels, sumVM, previous, projectid)
+			sumMem = getMem(system_labels, sumMem, previous, projectid)
 
 		}
 		sku := row[1].(string)
-
-		if strings.Contains(sku, "GPU") {
+		if projectid == previous && strings.Contains(sku, "GPU") { //if we are still in the same project continue
 			sumGPU = 1 + sumGPU
+		} else if strings.Contains(sku, "GPU") {
+			sumGPU = 1
+		} else {
+			sumGPU = 0
 		}
 
+		previous = projectid
+		projectid = row[3].(string)
 	}
 
 	d["sumCost"] = sumCost
@@ -262,13 +254,29 @@ func printResults(w io.Writer, iter *bigquery.RowIterator) map[string]float64 {
 	d["sumCores"] = sumCores
 	d["sumMem"] = sumMem
 	d["sumVM"] = sumVM
-
+	d["projectid"] = projectid
 	return d
 }
-func getCores(sys []bigquery.Value, sumCores float64) float64 {
+func getSum(row []bigquery.Value, sumCost float64, id string, prev string) float64 {
+	var ex = sumCost
+
+	if id == prev { //if we are still in the same project continue
+		sumCost = row[0].(float64)
+		sumCost = math.Round(sumCost*100)/100 + ex
+	} else { //else start from 0
+		sumCost = row[0].(float64)
+		ex = 0
+	}
+
+	return sumCost
+}
+
+//TODO improve the code, many repetitions
+
+func getCores(sys []bigquery.Value, sumCores float64, prev string, id string) float64 {
 	var valCores = fmt.Sprint(sys[0])
 
-	if strings.Contains(valCores, "cores") {
+	if strings.Contains(valCores, "cores") && id == prev {
 		s := strings.Fields(valCores)
 		sCores := strings.Replace(s[1], "]", "", -1)
 
@@ -277,28 +285,49 @@ func getCores(sys []bigquery.Value, sumCores float64) float64 {
 			// TODO: Handle error.
 		}
 		sumCores = example + sumCores
+	} else if strings.Contains(valCores, "cores") {
+		s := strings.Fields(valCores)
+		sCores := strings.Replace(s[1], "]", "", -1)
+
+		example, err := strconv.ParseFloat(fmt.Sprint(sCores), 64)
+		if err == nil {
+			// TODO: Handle error.
+		}
+		sumCores = example
+	} else {
+		sumCores = 0
 	}
 	return sumCores
 }
-func getVM(sys []bigquery.Value, sumVM float64) float64 {
+func getVM(sys []bigquery.Value, sumVM float64, prev string, id string) float64 {
 	var valVM = fmt.Sprint(sys[1])
 
-	if strings.Contains(valVM, "machine_spec") {
+	if strings.Contains(valVM, "machine_spec") && id == prev {
 		sumVM = sumVM + 1
+	} else if strings.Contains(valVM, "machine_spec") {
+		sumVM = 1
 	}
 	return sumVM
 }
 
-func getMem(sys []bigquery.Value, sumMem float64) float64 {
+func getMem(sys []bigquery.Value, sumMem float64, prev string, id string) float64 {
 	var valMem = fmt.Sprint(sys[2])
 
-	if strings.Contains(valMem, "memory") {
+	if strings.Contains(valMem, "memory") && id == prev {
 
 		example, err := strconv.ParseFloat(fmt.Sprint(valMem[len(valMem)-5:len(valMem)-1]), 64)
 		if err == nil {
 			// TODO: Handle error.
 		}
 		sumMem = example + sumMem
+	} else if strings.Contains(valMem, "memory") {
+		sumMemNew, err := strconv.ParseFloat(fmt.Sprint(valMem[len(valMem)-5:len(valMem)-1]), 64)
+		if err == nil {
+			// TODO: Handle error.
+		}
+		sumMem = sumMemNew
+	} else {
+		sumMem = 0
 	}
 	return sumMem
 }
