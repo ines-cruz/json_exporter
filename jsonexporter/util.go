@@ -254,10 +254,23 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 
 	return data
 }
+func verifyID(prev string, id string) bool {
+	if id == prev {
+		return true
+	}
+	return false
+}
+func verifyStrings(toCompare string, real string) bool {
+	if strings.Contains(toCompare, real) {
+		return true
+	}
+	return false
+}
+
 func getSum(row []bigquery.Value, sumCost float64, id string, prev string) float64 {
 	var ex = sumCost
 
-	if id == prev { //if we are still in the same project continue
+	if verifyID(prev, id) { //if we are still in the same project continue
 		sumCost = row[0].(float64)
 		sumCost = math.Round(sumCost*100)/100 + ex
 	} else {
@@ -266,58 +279,55 @@ func getSum(row []bigquery.Value, sumCost float64, id string, prev string) float
 
 	return sumCost
 }
+func verifyCores(valCores string) float64 {
+	s := strings.Fields(valCores)
+	sCores := strings.Replace(s[1], "]", "", -1)
+
+	example, err := strconv.ParseFloat(fmt.Sprint(sCores), 64)
+	if err == nil {
+		// TODO: Handle error.
+	}
+	return example
+
+}
 
 func getCores(sys []bigquery.Value, sumCores float64, prev string, id string) float64 {
 	var valCores = fmt.Sprint(sys[0])
 
-	if strings.Contains(valCores, "cores") && id == prev {
-		s := strings.Fields(valCores)
-		sCores := strings.Replace(s[1], "]", "", -1)
-
-		example, err := strconv.ParseFloat(fmt.Sprint(sCores), 64)
-		if err == nil {
-			// TODO: Handle error.
-		}
-		sumCores = example + sumCores
-	} else if strings.Contains(valCores, "cores") {
-		s := strings.Fields(valCores)
-		sCores := strings.Replace(s[1], "]", "", -1)
-
-		example, err := strconv.ParseFloat(fmt.Sprint(sCores), 64)
-		if err == nil {
-			// TODO: Handle error.
-		}
-		sumCores = example
+	if verifyStrings(valCores, "cores") && verifyID(prev, id) {
+		sumCores = verifyCores(valCores) + sumCores
+	} else if verifyStrings(valCores, "cores") {
+		sumCores = verifyCores(valCores)
 	}
 	return sumCores
 }
+
 func getVM(sys []bigquery.Value, sumVM float64, prev string, id string) float64 {
 	var valVM = fmt.Sprint(sys[1])
 
-	if strings.Contains(valVM, "machine_spec") && id == prev {
+	if verifyStrings(valVM, "machine_spec") && verifyID(prev, id) {
 		sumVM = sumVM + 1
-	} else if strings.Contains(valVM, "machine_spec") {
+	} else if verifyStrings(valVM, "machine_spec") {
 		sumVM = 1
 	}
 	return sumVM
 }
-
+func verifyMem(valMem string) float64 {
+	example, err := strconv.ParseFloat(fmt.Sprint(valMem[len(valMem)-5:len(valMem)-1]), 64)
+	if err == nil {
+		// TODO: Handle error.
+	}
+	return example
+}
 func getMem(sys []bigquery.Value, sumMem float64, prev string, id string) float64 {
 	var valMem = fmt.Sprint(sys[2])
 
-	if strings.Contains(valMem, "memory") && id == prev {
+	if verifyStrings(valMem, "memory") && verifyID(prev, id) {
 
-		example, err := strconv.ParseFloat(fmt.Sprint(valMem[len(valMem)-5:len(valMem)-1]), 64)
-		if err == nil {
-			// TODO: Handle error.
-		}
-		sumMem = example + sumMem
-	} else if strings.Contains(valMem, "memory") {
-		sumMemNew, err := strconv.ParseFloat(fmt.Sprint(valMem[len(valMem)-5:len(valMem)-1]), 64)
-		if err == nil {
-			// TODO: Handle error.
-		}
-		sumMem = sumMemNew
+		sumMem = verifyMem(valMem) + sumMem
+	} else if verifyStrings(valMem, "memory") {
+
+		sumMem = verifyMem(valMem)
 	}
 	return sumMem
 }
