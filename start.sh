@@ -11,6 +11,7 @@ cd  prometheus-2.22.2.linux-amd64
 
 cd ..
 cd json_exporter
+make build
 python -m SimpleHTTPServer 8080 &
 
 while (( keepgoing )); do

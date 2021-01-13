@@ -24,12 +24,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -146,15 +144,12 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	// GCP
 	//Create client
 	//Name of the Google BigQuery DB
-	key := os.Getenv("key")
-	table := os.Getenv("table")
-	client, err := bigquery.NewClient(ctx, "billing-cern", option.WithAPIKey(key))
+	client, err := bigquery.NewClient(ctx, "billing-cern")
 	if err != nil {
 		fmt.Printf("Client create error: %v\n", err)
 	}
 
-	row := client.Query(`SELECT cost,  sku.description, system_labels, project.id
-		FROM ` + table + "ORDER BY project.id")
+	row := client.Query(`SELECT cost,  sku.description, system_labels, project.id FROM sbsl_cern_billing_info.gcp_billing_export_v1_012C54_B3DAFC_973FAF WHERE project.id IS NOT NULL AND project.id!="billing-cern" ORDER BY project.id`)
 	rows, err := row.Read(ctx)
 	if err != nil {
 		fmt.Printf("Error2: %v\n", err)
@@ -165,7 +160,7 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	thisMap := make(map[string]interface{})
 	thisMap["values"] = ex
 
-	file, _ := json.MarshalIndent(thisMap, "[]", "")
+	file, _ := json.MarshalIndent(thisMap, "", "")
 
 	_ = ioutil.WriteFile("examples/output.json", file, 0644)
 
@@ -206,7 +201,7 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 }
 
 // printResults prints results from a query to the _ public dataset.
-func printResults(iter *bigquery.RowIterator) map[string]interface{} {
+func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} {
 	var sumCost float64
 	var sumGPU float64
 	var sumCores float64
@@ -214,8 +209,11 @@ func printResults(iter *bigquery.RowIterator) map[string]interface{} {
 	var sumVM float64
 	var projectid string
 	var previous string
-	d := map[string]interface{}{}
+
+	var data = make(map[string]map[string]interface{})
+
 	for {
+		d := map[string]interface{}{}
 
 		var row []bigquery.Value
 		err := iter.Next(&row)
@@ -241,21 +239,20 @@ func printResults(iter *bigquery.RowIterator) map[string]interface{} {
 			sumGPU = 1 + sumGPU
 		} else if strings.Contains(sku, "GPU") {
 			sumGPU = 1
-		} else {
-			sumGPU = 0
 		}
 
+		d["sumCost"] = sumCost
+		d["sumGPU"] = sumGPU
+		d["sumCores"] = sumCores
+		d["sumMem"] = sumMem
+		d["sumVM"] = sumVM
+		d["projectid"] = projectid
+		data[projectid] = d
+
 		previous = projectid
-		projectid = row[3].(string)
 	}
 
-	d["sumCost"] = sumCost
-	d["sumGPU"] = sumGPU
-	d["sumCores"] = sumCores
-	d["sumMem"] = sumMem
-	d["sumVM"] = sumVM
-	d["projectid"] = projectid
-	return d
+	return data
 }
 func getSum(row []bigquery.Value, sumCost float64, id string, prev string) float64 {
 	var ex = sumCost
@@ -263,15 +260,12 @@ func getSum(row []bigquery.Value, sumCost float64, id string, prev string) float
 	if id == prev { //if we are still in the same project continue
 		sumCost = row[0].(float64)
 		sumCost = math.Round(sumCost*100)/100 + ex
-	} else { //else start from 0
+	} else {
 		sumCost = row[0].(float64)
-		ex = 0
 	}
 
 	return sumCost
 }
-
-//TODO improve the code, many repetitions
 
 func getCores(sys []bigquery.Value, sumCores float64, prev string, id string) float64 {
 	var valCores = fmt.Sprint(sys[0])
@@ -294,8 +288,6 @@ func getCores(sys []bigquery.Value, sumCores float64, prev string, id string) fl
 			// TODO: Handle error.
 		}
 		sumCores = example
-	} else {
-		sumCores = 0
 	}
 	return sumCores
 }
@@ -326,8 +318,6 @@ func getMem(sys []bigquery.Value, sumMem float64, prev string, id string) float6
 			// TODO: Handle error.
 		}
 		sumMem = sumMemNew
-	} else {
-		sumMem = 0
 	}
 	return sumMem
 }
