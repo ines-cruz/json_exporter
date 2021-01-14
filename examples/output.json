@@ -1,60 +1,49 @@
 {
 "values": {
-"alice-cern": {
-"projectid": "alice-cern",
-"sumCores": 0,
-"sumCost": 0,
-"sumGPU": 0,
-"sumMem": 0,
-"sumVM": 0
-},
 "beop-teabt-cern": {
+"month": "01-2021",
 "projectid": "beop-teabt-cern",
-"sumCores": 3104,
-"sumCost": 35.81046199999999,
-"sumGPU": 75,
-"sumMem": 429344,
-"sumVM": 370
-},
-"cms-cern-project": {
-"projectid": "cms-cern-project",
-"sumCores": 3104,
-"sumCost": 0,
-"sumGPU": 75,
-"sumMem": 429344,
-"sumVM": 370
+"sumCores": 1568,
+"sumCost": 28.93,
+"sumGPU": 44,
+"sumMem": 141120,
+"sumVM": 196
 },
 "it-atlas-cern": {
+"month": "01-2021",
 "projectid": "it-atlas-cern",
-"sumCores": 211958,
-"sumCost": 3342.980000000325,
-"sumGPU": 690,
-"sumMem": 268684160,
-"sumVM": 57164
+"sumCores": 59730,
+"sumCost": 394.83,
+"sumGPU": 44,
+"sumMem": 93174432,
+"sumVM": 19571
 },
 "it-db-ia-cern": {
+"month": "01-2021",
 "projectid": "it-db-ia-cern",
-"sumCores": 211958,
+"sumCores": 59730,
 "sumCost": 0,
-"sumGPU": 690,
-"sumMem": 268684160,
-"sumVM": 57164
+"sumGPU": 44,
+"sumMem": 93174432,
+"sumVM": 19571
 },
 "it-db-sas-cern": {
+"month": "01-2021",
 "projectid": "it-db-sas-cern",
-"sumCores": 211958,
+"sumCores": 59730,
 "sumCost": 0,
-"sumGPU": 690,
-"sumMem": 268684160,
-"sumVM": 57164
+"sumGPU": 44,
+"sumMem": 93174432,
+"sumVM": 19571
 },
 "it-openlab-cern": {
+"month": "01-2021",
 "projectid": "it-openlab-cern",
-"sumCores": 281623,
-"sumCost": 4791.462207000068,
-"sumGPU": 692,
-"sumMem": 275017760,
-"sumVM": 61534
+"sumCores": 31089,
+"sumCost": 807.63,
+"sumGPU": 46,
+"sumMem": 2861760,
+"sumVM": 1959
 }
 }
 }

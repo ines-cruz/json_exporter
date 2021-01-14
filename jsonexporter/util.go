@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func MakeMetricName(parts ...string) string {
@@ -149,7 +150,7 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 		fmt.Printf("Client create error: %v\n", err)
 	}
 
-	row := client.Query(`SELECT cost,  sku.description, system_labels, project.id FROM sbsl_cern_billing_info.gcp_billing_export_v1_012C54_B3DAFC_973FAF WHERE project.id IS NOT NULL AND project.id!="billing-cern" ORDER BY project.id`)
+	row := client.Query(`SELECT cost,  sku.description, system_labels, project.id, usage_start_time FROM sbsl_cern_billing_info.gcp_billing_export_v1_012C54_B3DAFC_973FAF WHERE project.id IS NOT NULL AND project.id!="billing-cern" ORDER BY project.id`)
 	rows, err := row.Read(ctx)
 	if err != nil {
 		fmt.Printf("Error2: %v\n", err)
@@ -209,6 +210,7 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 	var sumVM float64
 	var projectid string
 	var previous string
+	var startDate time.Time
 
 	var data = make(map[string]map[string]interface{})
 
@@ -221,38 +223,49 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 		if err == iterator.Done {
 			break
 		}
-		projectid = row[3].(string)
+		startDate = row[4].(time.Time)
+		if checkDate(startDate) {
+			projectid = row[3].(string)
 
-		sumCost = getSum(row, sumCost, projectid, previous)
+			sumCost = getSum(row, sumCost, projectid, previous)
 
-		system_labels := row[2].([]bigquery.Value)
+			system_labels := row[2].([]bigquery.Value)
 
-		if len(system_labels) > 0 {
+			if len(system_labels) > 0 {
 
-			sumCores = getCores(system_labels, sumCores, previous, projectid)
-			sumVM = getVM(system_labels, sumVM, previous, projectid)
-			sumMem = getMem(system_labels, sumMem, previous, projectid)
+				sumCores = getCores(system_labels, sumCores, previous, projectid)
+				sumVM = getVM(system_labels, sumVM, previous, projectid)
+				sumMem = getMem(system_labels, sumMem, previous, projectid)
 
+			}
+			sku := row[1].(string)
+			if projectid == previous && strings.Contains(sku, "GPU") { //if we are still in the same project continue
+				sumGPU = 1 + sumGPU
+			} else if strings.Contains(sku, "GPU") {
+				sumGPU = 1
+			}
+
+			d["sumCost"] = math.Round(sumCost*100) / 100
+			d["sumGPU"] = sumGPU
+			d["sumCores"] = sumCores
+			d["sumMem"] = sumMem
+			d["sumVM"] = sumVM
+			d["projectid"] = projectid
+
+			d["month"] = startDate.Format("01-2006")
+			data[projectid] = d
+
+			previous = projectid
 		}
-		sku := row[1].(string)
-		if projectid == previous && strings.Contains(sku, "GPU") { //if we are still in the same project continue
-			sumGPU = 1 + sumGPU
-		} else if strings.Contains(sku, "GPU") {
-			sumGPU = 1
-		}
-
-		d["sumCost"] = sumCost
-		d["sumGPU"] = sumGPU
-		d["sumCores"] = sumCores
-		d["sumMem"] = sumMem
-		d["sumVM"] = sumVM
-		d["projectid"] = projectid
-		data[projectid] = d
-
-		previous = projectid
 	}
-
 	return data
+}
+func checkDate(startDate time.Time) bool {
+
+	if startDate.Month() == time.Now().Month() {
+		return true
+	}
+	return false
 }
 func verifyID(prev string, id string) bool {
 	if id == prev {
@@ -272,7 +285,7 @@ func getSum(row []bigquery.Value, sumCost float64, id string, prev string) float
 
 	if verifyID(prev, id) { //if we are still in the same project continue
 		sumCost = row[0].(float64)
-		sumCost = math.Round(sumCost*100)/100 + ex
+		sumCost = sumCost + ex
 	} else {
 		sumCost = row[0].(float64)
 	}

@@ -3,10 +3,12 @@ metrics:
   type: object
   path: $.values[*]
   labels:
-    projectid: $.projectid
+    month: $.month
   values:
-    spent: $.sumCost
-    vmnum: $.sumVM
-    sumMemory: $.sumMem
-    sumCores: $.sumCores
-    sumGPU: $.sumGPU
+    spent: $.amountSpent
+    vmnum: $.numberVM
+    sumMemory: $.memoryMB
+    sumCores: $.CPUh
+    sumGPU: $.GPUh
+    projectid: $.projectid
+
