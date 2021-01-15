@@ -158,10 +158,7 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	}
 	var ex = printResults(rows)
 
-	thisMap := make(map[string]interface{})
-	thisMap["values"] = ex
-
-	file, _ := json.MarshalIndent(thisMap, "", "")
+	file, _ := json.MarshalIndent(ex, "", "")
 
 	_ = ioutil.WriteFile("examples/output.json", file, 0644)
 
@@ -238,8 +235,6 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 			var valGPU = fmt.Sprint(row[1])
 			if verifyStrings(valGPU, "GPU") {
 				sumGPU = getDuration(projectid, previous, sumGPU, endTime, startTime)
-			} else {
-				sumGPU = 0
 			}
 			system_labels := row[2].([]bigquery.Value)
 
@@ -258,12 +253,12 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 					sumMem = getMem(system_labels, sumMem, previous, projectid)
 				}
 
-			} else {
-				if !verifyID(previous, projectid) {
-					sumVM = 0
-					sumMem = 0
-					sumCores = 0
-				}
+			}
+			if !verifyID(previous, projectid) {
+				sumVM = 0
+				sumMem = 0
+				sumCores = 0
+				sumGPU = 0
 			}
 
 			d["month"] = startTime.Format("01-2006")
@@ -308,7 +303,7 @@ func getDuration(projectid string, previous string, sum float64, endTime time.Ti
 		diff := endTime.Sub(startTime).Hours() + sum
 		return diff
 	}
-	return 0
+	return sum
 }
 
 func getVM(sumVM float64, prev string, id string) float64 {
