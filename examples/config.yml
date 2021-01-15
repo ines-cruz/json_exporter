@@ -5,10 +5,10 @@ metrics:
   labels:
     month: $.month
   values:
-    spent: $.amountSpent
-    vmnum: $.numberVM
-    sumMemory: $.memoryMB
-    sumCores: $.CPUh
-    sumGPU: $.GPUh
+    amountSpent: $.amountSpent
+    numberVM: $.numberVM
+    memoryMB: $.memoryMB
+    CPUh: $.CPUh
+    GPUh: $.GPUh
     projectid: $.projectid
 

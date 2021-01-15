@@ -150,7 +150,7 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 		fmt.Printf("Client create error: %v\n", err)
 	}
 
-	row := client.Query(`SELECT cost,  sku.description, system_labels, project.id, usage_start_time FROM sbsl_cern_billing_info.gcp_billing_export_v1_012C54_B3DAFC_973FAF WHERE project.id IS NOT NULL AND project.id!="billing-cern" ORDER BY project.id`)
+	row := client.Query(`SELECT cost,  sku.description, system_labels, project.id, usage_start_time, usage_end_time FROM sbsl_cern_billing_info.gcp_billing_export_v1_012C54_B3DAFC_973FAF WHERE project.id IS NOT NULL AND project.id!="billing-cern" ORDER BY project.id`)
 	rows, err := row.Read(ctx)
 	if err != nil {
 		fmt.Printf("Error2: %v\n", err)
@@ -210,12 +210,16 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 	var sumVM float64
 	var projectid string
 	var previous string
-	var startDate time.Time
+	var startTime time.Time
+	var endTime time.Time
 
 	var data = make(map[string]map[string]interface{})
+	d := map[string]interface{}{}
 
 	for {
-		d := map[string]interface{}{}
+
+		d = map[string]interface{}{}
+		previous = projectid
 
 		var row []bigquery.Value
 		err := iter.Next(&row)
@@ -223,107 +227,95 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 		if err == iterator.Done {
 			break
 		}
-		startDate = row[4].(time.Time)
-		if checkDate(startDate) {
+		startTime = row[4].(time.Time)
+		if checkDate(startTime) {
+
 			projectid = row[3].(string)
 
 			sumCost = getSum(row, sumCost, projectid, previous)
 
+			endTime = row[5].(time.Time)
+			var valGPU = fmt.Sprint(row[1])
+			if verifyStrings(valGPU, "GPU") {
+				sumGPU = getDuration(projectid, previous, sumGPU, endTime, startTime)
+			} else {
+				sumGPU = 0
+			}
 			system_labels := row[2].([]bigquery.Value)
 
 			if len(system_labels) > 0 {
 
-				sumCores = getCores(system_labels, sumCores, previous, projectid)
-				sumVM = getVM(system_labels, sumVM, previous, projectid)
-				sumMem = getMem(system_labels, sumMem, previous, projectid)
+				var valCores = fmt.Sprint(system_labels[0])
+				if verifyStrings(valCores, "cores") {
+					sumCores = getDuration(projectid, previous, sumCores, endTime, startTime)
+				}
+				var valVM = fmt.Sprint(system_labels[1])
+				if verifyStrings(valVM, "machine_spec") {
+					sumVM = getVM(sumVM, previous, projectid)
+				}
+				var valMem = fmt.Sprint(system_labels[2])
+				if verifyStrings(valMem, "memory") {
+					sumMem = getMem(system_labels, sumMem, previous, projectid)
+				}
 
-			}
-			sku := row[1].(string)
-			if projectid == previous && strings.Contains(sku, "GPU") { //if we are still in the same project continue
-				sumGPU = 1 + sumGPU
-			} else if strings.Contains(sku, "GPU") {
-				sumGPU = 1
+			} else {
+				if !verifyID(previous, projectid) {
+					sumVM = 0
+					sumMem = 0
+					sumCores = 0
+				}
 			}
 
-			d["sumCost"] = math.Round(sumCost*100) / 100
-			d["sumGPU"] = sumGPU
-			d["sumCores"] = sumCores
-			d["sumMem"] = sumMem
-			d["sumVM"] = sumVM
+			d["month"] = startTime.Format("01-2006")
+			d["amountSpent"] = math.Round(sumCost*100) / 100
+			d["numberVM"] = sumVM
+			d["memoryMB"] = sumMem
+			d["CPUh"] = sumCores
+			d["GPUh"] = sumGPU
 			d["projectid"] = projectid
 
-			d["month"] = startDate.Format("01-2006")
 			data[projectid] = d
 
-			previous = projectid
 		}
 	}
 	return data
 }
 func checkDate(startDate time.Time) bool {
 
-	if startDate.Month() == time.Now().Month() {
-		return true
-	}
-	return false
+	return startDate.Month() == time.Now().Month() && startDate.Year() == time.Now().Year()
+
 }
 func verifyID(prev string, id string) bool {
-	if id == prev {
-		return true
-	}
-	return false
+
+	return strings.EqualFold(prev, id)
 }
 func verifyStrings(toCompare string, real string) bool {
-	if strings.Contains(toCompare, real) {
-		return true
-	}
-	return false
+	return strings.Contains(toCompare, real)
 }
 
 func getSum(row []bigquery.Value, sumCost float64, id string, prev string) float64 {
-	var ex = sumCost
 
 	if verifyID(prev, id) { //if we are still in the same project continue
-		sumCost = row[0].(float64)
-		sumCost = sumCost + ex
-	} else {
-		sumCost = row[0].(float64)
+		return row[0].(float64) + sumCost
 	}
-
-	return sumCost
-}
-func verifyCores(valCores string) float64 {
-	s := strings.Fields(valCores)
-	sCores := strings.Replace(s[1], "]", "", -1)
-
-	example, err := strconv.ParseFloat(fmt.Sprint(sCores), 64)
-	if err == nil {
-		// TODO: Handle error.
-	}
-	return example
+	return row[0].(float64)
 
 }
 
-func getCores(sys []bigquery.Value, sumCores float64, prev string, id string) float64 {
-	var valCores = fmt.Sprint(sys[0])
+func getDuration(projectid string, previous string, sum float64, endTime time.Time, startTime time.Time) float64 {
 
-	if verifyStrings(valCores, "cores") && verifyID(prev, id) {
-		sumCores = verifyCores(valCores) + sumCores
-	} else if verifyStrings(valCores, "cores") {
-		sumCores = verifyCores(valCores)
+	if verifyID(previous, projectid) {
+		diff := endTime.Sub(startTime).Hours() + sum
+		return diff
 	}
-	return sumCores
+	return 0
 }
 
-func getVM(sys []bigquery.Value, sumVM float64, prev string, id string) float64 {
-	var valVM = fmt.Sprint(sys[1])
-
-	if verifyStrings(valVM, "machine_spec") && verifyID(prev, id) {
-		sumVM = sumVM + 1
-	} else if verifyStrings(valVM, "machine_spec") {
-		sumVM = 1
+func getVM(sumVM float64, prev string, id string) float64 {
+	if verifyID(prev, id) {
+		return sumVM + 1
 	}
-	return sumVM
+	return 0
 }
 func verifyMem(valMem string) float64 {
 	example, err := strconv.ParseFloat(fmt.Sprint(valMem[len(valMem)-5:len(valMem)-1]), 64)
@@ -333,14 +325,8 @@ func verifyMem(valMem string) float64 {
 	return example
 }
 func getMem(sys []bigquery.Value, sumMem float64, prev string, id string) float64 {
-	var valMem = fmt.Sprint(sys[2])
-
-	if verifyStrings(valMem, "memory") && verifyID(prev, id) {
-
-		sumMem = verifyMem(valMem) + sumMem
-	} else if verifyStrings(valMem, "memory") {
-
-		sumMem = verifyMem(valMem)
+	if verifyID(prev, id) {
+		return verifyMem(fmt.Sprint(sys[2])) + sumMem
 	}
-	return sumMem
+	return 0
 }
