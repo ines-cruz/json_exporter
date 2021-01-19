@@ -24,10 +24,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -145,7 +147,8 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	// GCP
 	//Create client
 	//Name of the Google BigQuery DB
-	client, err := bigquery.NewClient(ctx, "billing-cern")
+	env := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	client, err := bigquery.NewClient(ctx, "billing-cern", option.WithCredentialsFile(env))
 	if err != nil {
 		fmt.Printf("Client create error: %v\n", err)
 	}
