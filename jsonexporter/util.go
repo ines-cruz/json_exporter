@@ -158,7 +158,10 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 	}
 	var ex = printResults(rows)
 
-	file, _ := json.MarshalIndent(ex, "", "")
+	thisMap := make(map[string]([]map[string]interface{}))
+	thisMap["values"] = ex
+
+	file, _ := json.MarshalIndent(thisMap, "", "")
 
 	_ = ioutil.WriteFile("examples/output.json", file, 0644)
 
@@ -199,7 +202,7 @@ func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]by
 }
 
 // printResults prints results from a query to the _ public dataset.
-func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} {
+func printResults(iter *bigquery.RowIterator) []map[string]interface{} {
 	var sumCost float64
 	var sumGPU float64
 	var sumCores float64
@@ -210,12 +213,11 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 	var startTime time.Time
 	var endTime time.Time
 
-	var data = make(map[string]map[string]interface{})
+	var data = []map[string]interface{}{}
 	d := map[string]interface{}{}
 
 	for {
 
-		d = map[string]interface{}{}
 		previous = projectid
 
 		var row []bigquery.Value
@@ -229,6 +231,14 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 
 			projectid = row[3].(string)
 
+			if !verifyID(previous, projectid) && len(d) > 0 {
+				data = append(data, d)
+				sumVM = 0
+				sumMem = 0
+				sumCores = 0
+				sumGPU = 0
+				d = map[string]interface{}{}
+			}
 			sumCost = getSum(row, sumCost, projectid, previous)
 
 			endTime = row[5].(time.Time)
@@ -254,12 +264,6 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 				}
 
 			}
-			if !verifyID(previous, projectid) {
-				sumVM = 0
-				sumMem = 0
-				sumCores = 0
-				sumGPU = 0
-			}
 
 			d["month"] = startTime.Format("01-2006")
 			d["amountSpent"] = math.Round(sumCost*100) / 100
@@ -269,10 +273,9 @@ func printResults(iter *bigquery.RowIterator) map[string]map[string]interface{} 
 			d["GPUh"] = sumGPU
 			d["projectid"] = projectid
 
-			data[projectid] = d
-
 		}
 	}
+	data = append(data, d)
 	return data
 }
 func checkDate(startDate time.Time) bool {

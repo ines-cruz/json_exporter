@@ -1,13 +1,15 @@
 metrics:
 - name: testBQ
   type: object
-  path: $.projectid[*]
-  projectid:
+  path: $.values[*]
+  labels:
+    projectid: $.projectid
+    month: $.month
+  values:
     amountSpent: $.amountSpent
     numberVM: $.numberVM
     memoryMB: $.memoryMB
     CPUh: $.CPUh
     GPUh: $.GPUh
-    month: $.month
 
 
