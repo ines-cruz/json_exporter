@@ -11,6 +11,7 @@ cd  prometheus-2.22.2.linux-amd64
 
 cd ..
 cd json_exporter
+export GOOGLE_APPLICATION_CREDENTIALS="/home/ines/Downloads/billingcern.json"
 make build
 python -m SimpleHTTPServer 8080 &
 
