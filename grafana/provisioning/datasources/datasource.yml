@@ -1,0 +1,9 @@
+
+  # datasource.yml
+  apiVersion: 1
+
+  datasources:
+    - name: PrometheusGCP
+      type: prometheus
+      access: proxy
+      url: localhost:9090

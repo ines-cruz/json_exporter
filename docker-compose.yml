@@ -1,0 +1,49 @@
+version: "3.3"
+services:
+
+  app:
+    build:
+      context: ./
+    ports:
+      - "8080:8080"
+    networks:
+      - internal
+
+
+  prometheus:
+    image: prom/prometheus
+    command:
+      - '--config.file=/go/src/json_exporter/examples/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    networks:
+      - internal
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus:/prometheus
+
+  grafana:
+    image: grafana/grafana:$GRAFANA_VERSION
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin1
+      PROMETHEUS_HOST: prometheus:9090
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - internal
+
+
+networks:
+  internal:
+
+volumes:
+  prometheus:
+  grafana-storage:
