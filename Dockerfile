@@ -27,7 +27,7 @@ RUN go build -o json_exporter
 RUN chmod 777 -R json_exporter
 
 
-
+EXPOSE 7979 8080 9090 3000
 ADD start.sh /
 RUN chmod +x /start.sh
 

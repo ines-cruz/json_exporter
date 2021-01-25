@@ -6,8 +6,7 @@ services:
       context: ./
     ports:
       - "8080:8080"
-    networks:
-      - internal
+      - "7979:7979"
 
 
   prometheus:
@@ -17,8 +16,6 @@ services:
       - '--storage.tsdb.path=/prometheus'
     ports:
       - "9090:9090"
-    networks:
-      - internal
     volumes:
       - ./prometheus/:/etc/prometheus/
       - prometheus:/prometheus
@@ -37,12 +34,8 @@ services:
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
     depends_on:
       - prometheus
-    networks:
-      - internal
 
 
-networks:
-  internal:
 
 volumes:
   prometheus:

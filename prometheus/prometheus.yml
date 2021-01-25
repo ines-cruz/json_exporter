@@ -5,15 +5,15 @@ scrape_configs:
   ## gather the metrics from third party json sources, via the json exporter
 - job_name: json
   metrics_path: /probe
-  scrape_interval: 86400s #once per day
+  scrape_interval: 30s # 86400s #once per day
   scrape_timeout: 30s
   static_configs:
     - targets:
-      - http://localhost:8080/examples/output.json ## Used from the example steps in Readme
+      - http://app:8080/examples/output.json ## Used from the example steps in Readme
   relabel_configs:
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: localhost:7979 ## Location of the json exporter's real <hostname>:<port>
+      replacement: app:7979 ## Location of the json exporter's real <hostname>:<port>
