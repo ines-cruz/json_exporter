@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": null,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -23,7 +23,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus-4",
+      "datasource": "PromGCP",
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -61,6 +61,26 @@
       "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
+      "targets": [
+        {
+          "expr": "testBQ_CPUh",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "expr": "testBQ_amountSpent",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "B"
+        },
+        {
+          "expr": "testBQ_GPUh",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "C"
+        }
+      ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
@@ -128,7 +148,7 @@
     ]
   },
   "timezone": "",
-  "title": "New dashboard",
-  "uid": null,
-  "version": 0
+  "title": "PromGCP",
+  "uid": "ni_dz6BGk",
+  "version": 2
 }

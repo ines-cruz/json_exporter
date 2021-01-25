@@ -1,9 +1,14 @@
+# config file version
+apiVersion: 1
 
-  # datasource.yml
-  apiVersion: 1
 
-  datasources:
-    - name: PrometheusGCP
-      type: prometheus
-      access: proxy
-      url: localhost:9090
+# list of datasources to insert/update depending
+# whats available in the database
+datasources:
+  # <string, required> name of the datasource. Required
+  - name: promGCP
+    # <string, required> datasource type. Required
+    type: prometheus
+    # <string, required> access mode. direct or proxy. Required
+    access: proxy
+    url: prometheus:9090

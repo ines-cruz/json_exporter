@@ -1,8 +1,8 @@
-# grafana/provisioning/dashboards/dashboard.yml
 apiVersion: 1
 
 providers:
-  - name: 'GCP'
-    folder: 'GCP'
+  - name: 'Default'
+    folder: ''
+    editable: true
     options:
       path: /etc/grafana/provisioning/dashboards

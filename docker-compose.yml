@@ -13,7 +13,7 @@ services:
   prometheus:
     image: prom/prometheus
     command:
-      - '--config.file=/go/src/json_exporter/examples/prometheus.yml'
+      - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     ports:
       - "9090:9090"

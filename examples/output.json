@@ -1,21 +1,21 @@
 {
 "values": [
 {
-"CPUh": 196,
-"GPUh": 44,
-"amountSpent": 29.57,
-"memoryMB": 141120,
+"CPUh": 313,
+"GPUh": 70,
+"amountSpent": 48.61,
+"memoryMB": 225360,
 "month": "01-2021",
-"numberVM": 196,
+"numberVM": 313,
 "projectid": "beop-teabt-cern"
 },
 {
-"CPUh": 26569,
-"GPUh": 0,
-"amountSpent": 542.19,
-"memoryMB": 126530208,
+"CPUh": 35619,
+"GPUh": 103,
+"amountSpent": 800.8,
+"memoryMB": 168674800,
 "month": "01-2021",
-"numberVM": 26569,
+"numberVM": 35619,
 "projectid": "it-atlas-cern"
 },
 {
@@ -37,12 +37,12 @@
 "projectid": "it-db-sas-cern"
 },
 {
-"CPUh": 2093,
+"CPUh": 2195,
 "GPUh": 2,
-"amountSpent": 1495.07,
-"memoryMB": 3054720,
+"amountSpent": 2424.02,
+"memoryMB": 3201600,
 "month": "01-2021",
-"numberVM": 2093,
+"numberVM": 2195,
 "projectid": "it-openlab-cern"
 }
 ]

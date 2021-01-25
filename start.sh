@@ -9,6 +9,7 @@ cd ..
 cd json_exporter
 
 export GOOGLE_APPLICATION_CREDENTIALS="/go/src/json_exporter/examples/billingcern.json"
+#export GOOGLE_APPLICATION_CREDENTIALS="/home/ines/Downloads/billingcern.json"
 
 python -m SimpleHTTPServer 8080 &
 
