@@ -28,7 +28,7 @@ Prometheus will get the data from the application.
 
 The application runs a query and obtains data from Google's BigQuery
 
-#Local Run: 
+# Local Run: 
 ## Build
 
 ```sh
