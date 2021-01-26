@@ -19,5 +19,5 @@ while (( keepgoing )); do
 
 
  curl -k "http://localhost:7979/probe?target=http://localhost:8080/examples/output.json"
- sleep 300
+ sleep 86400 #once per day
 done
