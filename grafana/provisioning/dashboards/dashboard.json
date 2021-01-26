@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 5,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -41,7 +41,6 @@
       "hiddenSeries": false,
       "id": 2,
       "legend": {
-        "alignAsTable": false,
         "avg": false,
         "current": false,
         "max": false,
@@ -64,23 +63,17 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "testBQ_CPUh",
+          "expr": "testBQ_amountSpent",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
-        },
-        {
-          "expr": "testBQ_GPUh",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "B"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "GCP billing ",
+      "title": "Panel Title",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -143,7 +136,7 @@
     ]
   },
   "timezone": "",
-  "title": "GCPDashboard",
-  "uid": "1WGZE6fGz2",
+  "title": "BillingGCP",
+  "uid": "dYk3_kLGk1",
   "version": 1
 }
