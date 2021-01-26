@@ -14,8 +14,8 @@
   },
   "editable": true,
   "gnetId": null,
-  "graphTooltip": 1,
-  "id": null,
+  "graphTooltip": 0,
+  "id": 5,
   "links": [],
   "panels": [
     {
@@ -23,7 +23,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "PromGCP",
+      "datasource": "promGCP",
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -41,6 +41,7 @@
       "hiddenSeries": false,
       "id": 2,
       "legend": {
+        "alignAsTable": false,
         "avg": false,
         "current": false,
         "max": false,
@@ -53,7 +54,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "7.1.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -69,23 +70,17 @@
           "refId": "A"
         },
         {
-          "expr": "testBQ_amountSpent",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "B"
-        },
-        {
           "expr": "testBQ_GPUh",
           "interval": "",
           "legendFormat": "",
-          "refId": "C"
+          "refId": "B"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Panel Title",
+      "title": "GCP billing ",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -148,7 +143,7 @@
     ]
   },
   "timezone": "",
-  "title": "PromGCP",
-  "uid": "ni_dz6BGk",
-  "version": 2
+  "title": "GCPDashboard",
+  "uid": "1WGZE6fGz2",
+  "version": 1
 }
