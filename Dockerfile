@@ -12,8 +12,6 @@ RUN apt-get update && apt-get -y install \
     python \
     golang
 
-USER root
-
 
 RUN go get -u  github.com/ines-cruz/json_exporter
 
@@ -25,7 +23,12 @@ COPY . /go/src/json_exporter/
 RUN go build -o json_exporter
 
 RUN chmod 777 -R json_exporter
+RUN chgrp -R 0 /go/src/json_exporter/ && \
+    chmod -R g=u /go/src/json_exporter/
 
+### Containers should NOT run as root as a good practice
+USER 10001
+WORKDIR ${APP_ROOT}
 
 EXPOSE 7979 8080 9090 3000
 ADD start.sh /
