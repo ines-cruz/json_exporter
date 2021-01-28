@@ -26,9 +26,9 @@ services:
   grafana:
     image: grafana/grafana:$GRAFANA_VERSION
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin1
-      PROMETHEUS_HOST: prometheus:9090
+      GF_SECURITY_ADMIN_USER: GRAFANA_ADMIN_USER
+      GF_SECURITY_ADMIN_PASSWORD: GRAFANA_ADMIN_PASSWORD
+      PROMETHEUS_HOST: PROMETHEUS_HOST
     ports:
       - 3000:3000
     volumes:
