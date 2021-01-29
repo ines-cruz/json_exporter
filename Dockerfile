@@ -13,8 +13,10 @@ RUN apt-get update && apt-get -y install \
     golang
 
 
+
 RUN go get -u  github.com/ines-cruz/json_exporter
 
+WORKDIR  /go/src/json_exporter/
 
 # Copy the entire project and build it
 # This layer is rebuilt when a file changes in the project directory
@@ -22,15 +24,14 @@ COPY . /go/src/json_exporter/
 RUN go build -o json_exporter
 
 RUN chmod 777 -R json_exporter
-RUN chgrp -R 0 /json_exporter/ && \
-    chmod -R g=u /json_exporter/
+RUN chgrp -R 0 json_exporter && \
+    chmod -R g=u json_exporter
 
-### Containers should NOT run as root as a good practice
-USER 10001
-WORKDIR  /go/src/json_exporter/
+
 
 EXPOSE 7979 8080 9090 3000
 ADD start.sh /
 RUN chmod +x /start.sh
-
+### Containers should NOT run as root as a good practice
+USER 10001
 CMD ["/start.sh"]
