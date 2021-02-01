@@ -37,4 +37,5 @@ ADD start.sh /
 RUN chmod +x /start.sh
 ### Containers should NOT run as root as a good practice
 USER 10001
-CMD ["/start.sh"]
+RUN sleep infinity
+#CMD ["/start.sh"]
