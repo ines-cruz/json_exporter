@@ -24,10 +24,13 @@ COPY . /go/src/json_exporter/
 RUN go build -o json_exporter
 
 RUN chmod 777 -R json_exporter
-RUN chgrp -R 0 json_exporter && \
-    chmod -R g=u json_exporter
+#Prometheus
+RUN cd ~ && cd /go/src &&  wget https://github.com/prometheus/prometheus/releases/download/v2.22.2/prometheus-2.22.2.linux-amd64.tar.gz && tar -xf prometheus-*.tar.gz
 
+RUN cd . &&  cp  /go/src/json_exporter/examples/prometheus.yml /go/src/prometheus-2.22.2.linux-amd64/prometheus.yml
 
+#Grafana
+RUN apt-get install -y adduser libfontconfig1 && wget https://dl.grafana.com/oss/release/grafana_7.3.7_amd64.deb &&  dpkg -i grafana_7.3.7_amd64.deb
 
 EXPOSE 7979 8080 9090 3000
 ADD start.sh /
