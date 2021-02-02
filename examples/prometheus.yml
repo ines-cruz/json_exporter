@@ -9,11 +9,11 @@ scrape_configs:
   scrape_timeout: 30s
   static_configs:
     - targets:
-      - http://app:8080/examples/output.json
+      - http://localhost:8080/examples/output.json
   relabel_configs:
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: http://app:7979 ## Location of the json exporter's real <hostname>:<port>
+      replacement: http://localhost:7979 ## Location of the json exporter's real <hostname>:<port>
