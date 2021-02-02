@@ -1,49 +1,49 @@
-version: "3.3"
-services:
+#version: "3.3"
+#services:
 
-  app:
-    build:
-      context: ./
-    ports:
-      - "8080:8080"
-    networks:
-      - internal
-
-
-  prometheus:
-    image: prom/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    ports:
-      - "9090:9090"
-    networks:
-      - internal
-    volumes:
-      - ./prometheus/:/etc/prometheus/
-      - prometheus:/prometheus
-
-  grafana:
-    image: grafana/grafana:$GRAFANA_VERSION
-    environment:
-      GF_SECURITY_ADMIN_USER: GRAFANA_ADMIN_USER
-      GF_SECURITY_ADMIN_PASSWORD: GRAFANA_ADMIN_PASSWORD
-      PROMETHEUS_HOST: PROMETHEUS_HOST
-    ports:
-      - 3000:3000
-    volumes:
-      - grafana-storage:/var/lib/grafana
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
-    depends_on:
-      - prometheus
-    networks:
-      - internal
+# app:
+#   build:
+#     context: ./
+#   ports:
+#     - "8080:8080"
+#    networks:
+#      - internal
 
 
-networks:
-  internal:
+#  prometheus:
+#    image: prom/prometheus
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#      - '--storage.tsdb.path=/prometheus'
+#    ports:
+#      - "9090:9090"
+#    networks:
+#      - internal
+#    volumes:
+#      - ./prometheus/:/etc/prometheus/
+#      - prometheus:/prometheus
 
-volumes:
-  prometheus:
-  grafana-storage:
+#  grafana:
+#    image: grafana/grafana:$GRAFANA_VERSION
+#    environment:
+#      GF_SECURITY_ADMIN_USER: GRAFANA_ADMIN_USER
+#      GF_SECURITY_ADMIN_PASSWORD: GRAFANA_ADMIN_PASSWORD
+#      PROMETHEUS_HOST: PROMETHEUS_HOST
+#    ports:
+#      - 3000:3000
+#    volumes:
+#      - grafana-storage:/var/lib/grafana
+#      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+#      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+#    depends_on:
+#      - prometheus
+#    networks:
+#      - internal
+
+
+#networks:
+#  internal:
+
+#volumes:
+#  prometheus:
+#  grafana-storage:
