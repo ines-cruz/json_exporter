@@ -29,8 +29,12 @@ RUN cd ~ && cd /go/src &&  wget https://github.com/prometheus/prometheus/release
 
 RUN cd . &&  cp  /go/src/json_exporter/examples/prometheus.yml /go/src/prometheus-2.24.1.linux-amd64/prometheus.yml
 
+
+RUN cd ~  && cd /go/src/prometheus-2.24.1.linux-amd64 && ./prometheus --web.listen-address="0.0.0.0:9090" --storage.tsdb.path=/tmp &
+
 #Grafana
 RUN apt-get install -y adduser libfontconfig1 && wget https://dl.grafana.com/oss/release/grafana_7.3.7_amd64.deb &&  dpkg -i grafana_7.3.7_amd64.deb
+RUN service grafana-server start
 
 EXPOSE 7979 8080 9090 3000
 ADD start.sh /

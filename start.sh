@@ -3,12 +3,6 @@
 keepgoing=1
 trap '{ echo "sigint"; keepgoing=0; }' SIGINT
 
-cd ..
-cd  prometheus-2.24.1.linux-amd64
-
-./prometheus --web.listen-address="0.0.0.0:9090" &
-
-service grafana-server start
 
 cd ..
 cd json_exporter
