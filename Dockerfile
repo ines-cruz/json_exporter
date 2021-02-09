@@ -35,7 +35,7 @@ RUN apt-get install -y adduser libfontconfig1 && \
     wget https://dl.grafana.com/oss/release/grafana_7.3.7_amd64.deb && \
     dpkg -i grafana_7.3.7_amd64.deb
 
-
+USER root
 EXPOSE 7979 8080 9090 3000
 ADD start.sh /
 ########## Dealing with openshift permissions constrains
