@@ -39,7 +39,7 @@ USER root
 EXPOSE 7979 8080 9090 3000
 ADD start.sh /
 ########## Dealing with openshift permissions constrains
-RUN sed -i 's/grafana:x:102:103::/grafana:x:1000920000:1000920000::/' /etc/passwd
+RUN sed -i 's/grafana:x:102:103::/grafana:x:1008110000:1008110000::/' /etc/passwd
 RUN chown -R grafana:grafana /var/lib/grafana /var/log/grafana /usr/share/grafana /etc/grafana /go/src/json_exporter/
 RUN chmod -R 777 /var/lib/grafana /var/log/grafana /usr/share/grafana /etc/grafana /go/src/json_exporter/
 
