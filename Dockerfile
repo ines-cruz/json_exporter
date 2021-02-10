@@ -19,6 +19,7 @@ WORKDIR  /go/src/
 RUN git clone https://github.com/ines-cruz/json_exporter # Using online repo instead of locally cloned repo
 COPY start.sh /go/src/json_exporter/
 COPY billingcern.json /go/src/json_exporter/
+WORKDIR  /go/src/json_exporter/
 RUN go build -o json_exporter
 RUN chmod 777 -R json_exporter
 ENV GOOGLE_APPLICATION_CREDENTIALS /go/src/json_exporter/billingcern.json

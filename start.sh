@@ -13,7 +13,7 @@ wait_for_credentials(){
 }
 
 prometheus(){
-  sed -i 's/18000s/600s/' /go/src/json_exporter/examples/prometheus.yml # To see stuff on grafana every 10 min
+  sed -i '1800s' /go/src/json_exporter/examples/prometheus.yml # To see stuff on grafana every 10 min
   echo "Run Prometheus..."
   /go/src/json_exporter/prometheus-2.24.1.linux-amd64/prometheus \
                --config.file="/go/src/json_exporter/examples/prometheus.yml" \
@@ -44,7 +44,7 @@ app(){
 
     echo "Curl to localhost:7979"
     curl -k "http://localhost:7979/probe?target=http://localhost:8080/examples/output.json"
-    sleep 10
+    sleep 900
 
   done
 }
