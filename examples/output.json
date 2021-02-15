@@ -3,28 +3,28 @@
 {
 "CPUh": 27,
 "GPUh": 6,
-"amountSpent": 1.42,
+"amountSpent": 1.52,
 "memoryMB": 19440,
 "month": "02-2021",
 "numberVM": 27,
 "projectid": "beop-teabt-cern"
 },
 {
-"CPUh": 14897,
-"GPUh": 505,
-"amountSpent": 590.93,
-"memoryMB": 73590480,
+"CPUh": 16576,
+"GPUh": 706,
+"amountSpent": 634.31,
+"memoryMB": 82338672,
 "month": "02-2021",
-"numberVM": 14897,
+"numberVM": 16576,
 "projectid": "it-atlas-cern"
 },
 {
-"CPUh": 268,
+"CPUh": 298,
 "GPUh": 57,
-"amountSpent": 275.42,
-"memoryMB": 457920,
+"amountSpent": 272.57,
+"memoryMB": 501120,
 "month": "02-2021",
-"numberVM": 268,
+"numberVM": 298,
 "projectid": "it-openlab-cern"
 }
 ]

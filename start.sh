@@ -1,10 +1,12 @@
 #!/bin/bash
 
+prometheus_scrape_interval="86400s"
+
 # This folder will contain logs for all the services
 mkdir logs
 
 wait_for_credentials(){
-  sleepTime=60
+  sleepTime=120
   while [[ ! -s $GOOGLE_APPLICATION_CREDENTIALS ]] ; do
     echo Waiting for credentials file, retrying in $sleepTime
     sleep $sleepTime
@@ -13,7 +15,7 @@ wait_for_credentials(){
 }
 
 prometheus(){
-  sed -i '1800s' /go/src/json_exporter/examples/prometheus.yml # To see stuff on grafana every 10 min
+  sed -i "s/18000s/$prometheus_scrape_interval/" /go/src/json_exporter/examples/prometheus.yml # To see stuff on grafana once a day
   echo "Run Prometheus..."
   /go/src/json_exporter/prometheus-2.24.1.linux-amd64/prometheus \
                --config.file="/go/src/json_exporter/examples/prometheus.yml" \
@@ -25,7 +27,7 @@ grafana(){
   # datasource
   sed -i 's/prometheus:9090/localhost:9090/' /go/src/json_exporter/grafana/provisioning/datasources/datasource.yml
   cp /go/src/json_exporter/grafana/provisioning/datasources/datasource.yml /usr/share/grafana/conf/provisioning/datasources/
-  # dashboard
+  # dashboard # TODO: both needed?
   cp /go/src/json_exporter/grafana/provisioning/dashboards/dashboard.yml /usr/share/grafana/conf/provisioning/dashboards/
   cp /go/src/json_exporter/grafana/provisioning/dashboards/dashboard.json /etc/grafana/provisioning/dashboards/
 
@@ -34,19 +36,10 @@ grafana(){
 }
 
 app(){
-
   echo "Run json_exporter"
   python -m SimpleHTTPServer 8080 &>> logs/SimpleHTTPServer_logs & # serves the files to be consumed by json_exporter (not needed in a monolithic, but needed when separating the 3 services)
   ./json_exporter http://localhost:8080/examples/output.json examples/config.yml &>> logs/json_exporter_logs &
-  # Both run in the background, logs sent to SimpleHTTPServer_logs and json_exporter_logs...
-
-  while true; do
-
-    echo "Curl to localhost:7979"
-    curl -k "http://localhost:7979/probe?target=http://localhost:8080/examples/output.json"
-    sleep 900
-
-  done
+  # logs sent to SimpleHTTPServer_logs and json_exporter_logs...
 }
 
 wait_for_credentials

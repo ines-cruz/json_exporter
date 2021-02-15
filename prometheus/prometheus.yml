@@ -5,7 +5,7 @@ scrape_configs:
   ## gather the metrics from third party json sources, via the json exporter
 - job_name: json
   metrics_path: /probe
-  scrape_interval: 18000s
+  scrape_interval: 86400s
   scrape_timeout: 30s
   static_configs:
     - targets:
