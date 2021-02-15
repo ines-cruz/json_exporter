@@ -10,6 +10,7 @@ require (
 	github.com/go-kit/kit v0.9.0
 	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/kawamuray/jsonpath v0.0.0-20160208140654-5c448ebf9735
+	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.7.1
 	github.com/prometheus/common v0.10.0
 	github.com/sirupsen/logrus v1.6.0 // indirect
