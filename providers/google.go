@@ -22,7 +22,7 @@ import (
 
 func GetGoogle(config config.Config, ctx context.Context, endpoint string) ([]byte, error) {
 	httpClientConfig := config.HTTPClientConfig
-	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
+	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
 	if err != nil {
 		fmt.Println("Error generating HTTP client")
 		return nil, err
