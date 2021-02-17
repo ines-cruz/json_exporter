@@ -36,7 +36,7 @@ func GetGoogle(config config.Config, ctx context.Context, endpoint string) ([]by
 		fmt.Printf("Client create error: %v\n", err)
 	}
 
-	row := client.Query(`SELECT cost,  sku.description, system_labels, project.id, usage_start_time, usage_end_time FROM sbsl_cern_billing_info.gcp_billing_export_v1_012C54_B3DAFC_973FAF WHERE project.id IS NOT NULL AND project.id!="billing-cern" ORDER BY project.id`)
+	row := client.Query(`SELECT cost,  sku.description, system_labels, project.id, usage_start_time, usage_end_time FROM sbsl_cern_billing_info.gcp_billing_export_v1_012C54_B3DAFC_973FAF WHERE project.id IS NOT NULL AND project.id!="billing-cern" ORDER BY project.id, usage_start_time`)
 	rows, err := row.Read(ctx)
 	if err != nil {
 		fmt.Printf("Error2: %v\n", err)
@@ -70,9 +70,9 @@ func GetGoogle(config config.Config, ctx context.Context, endpoint string) ([]by
 
 	defer func() {
 		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
-			fmt.Println("Failed to discard body", "err", err) //nolint:errcheck
+			fmt.Println("Failed to discard body", "err", err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode/100 != 2 {
@@ -98,14 +98,14 @@ func printResults(iter *bigquery.RowIterator) []map[string]interface{} {
 	var previous string
 	var startTime time.Time
 	var endTime time.Time
-
+	var prevDate time.Time
 	var data = []map[string]interface{}{}
 	d := map[string]interface{}{}
 
 	for {
 
 		previous = projectid
-
+		prevDate = startTime
 		var row []bigquery.Value
 		err := iter.Next(&row)
 
@@ -114,57 +114,63 @@ func printResults(iter *bigquery.RowIterator) []map[string]interface{} {
 		}
 		if len(row) != 0 {
 			startTime = row[4].(time.Time)
-			if checkDate(startTime) {
 
-				projectid = row[3].(string)
+			projectid = row[3].(string)
 
-				if !verifyID(previous, projectid) && len(d) > 0 {
-					data = append(data, d)
-					sumVM = 0
-					sumMem = 0
-					sumCores = 0
-					sumGPU = 0
-					d = map[string]interface{}{}
+			if (!verifyID(previous, projectid) && len(d) > 0) || (!checkMonth(startTime, prevDate) && len(d) > 0) {
+
+				data = append(data, d)
+				sumVM = 0
+				sumMem = 0
+				sumCost = 0
+				sumCores = 0
+				sumGPU = 0
+				d = map[string]interface{}{}
+			}
+			sumCost = getSum(row, sumCost, projectid, previous)
+
+			endTime = row[5].(time.Time)
+			var valGPU = fmt.Sprint(row[1])
+			if verifyStrings(valGPU, "GPU") {
+				sumGPU = getDuration(projectid, previous, sumGPU, endTime, startTime)
+			}
+			system_labels := row[2].([]bigquery.Value)
+
+			if len(system_labels) > 0 {
+
+				var valCores = fmt.Sprint(system_labels[0])
+				if verifyStrings(valCores, "cores") {
+					sumCores = getDuration(projectid, previous, sumCores, endTime, startTime)
 				}
-				sumCost = getSum(row, sumCost, projectid, previous)
-
-				endTime = row[5].(time.Time)
-				var valGPU = fmt.Sprint(row[1])
-				if verifyStrings(valGPU, "GPU") {
-					sumGPU = getDuration(projectid, previous, sumGPU, endTime, startTime)
+				var valVM = fmt.Sprint(system_labels[1])
+				if verifyStrings(valVM, "machine_spec") {
+					sumVM = getVM(sumVM, previous, projectid)
 				}
-				system_labels := row[2].([]bigquery.Value)
-
-				if len(system_labels) > 0 {
-
-					var valCores = fmt.Sprint(system_labels[0])
-					if verifyStrings(valCores, "cores") {
-						sumCores = getDuration(projectid, previous, sumCores, endTime, startTime)
-					}
-					var valVM = fmt.Sprint(system_labels[1])
-					if verifyStrings(valVM, "machine_spec") {
-						sumVM = getVM(sumVM, previous, projectid)
-					}
-					var valMem = fmt.Sprint(system_labels[2])
-					if verifyStrings(valMem, "memory") {
-						sumMem = getMem(system_labels, sumMem, previous, projectid)
-					}
-
+				var valMem = fmt.Sprint(system_labels[2])
+				if verifyStrings(valMem, "memory") {
+					sumMem = getMem(system_labels, sumMem, previous, projectid)
 				}
-
-				d["month"] = startTime.Format("01-2006")
-				d["amountSpent"] = math.Round(sumCost*100) / 100
-				d["numberVM"] = sumVM
-				d["memoryMB"] = sumMem
-				d["CPUh"] = sumCores
-				d["GPUh"] = sumGPU
-				d["projectid"] = projectid
 
 			}
+
+			d["month"] = startTime.Format("01-2006")
+			d["amountSpent"] = math.Round(sumCost*100) / 100
+			d["numberVM"] = sumVM
+			d["memoryMB"] = sumMem
+			d["CPUh"] = sumCores
+			d["GPUh"] = sumGPU
+			d["projectid"] = projectid
+
 		}
 	}
 	data = append(data, d)
 	return data
+}
+
+func checkMonth(startDate time.Time, prevDate time.Time) bool {
+
+	return startDate.Month() == prevDate.Month() && startDate.Year() == prevDate.Year()
+
 }
 func checkDate(startDate time.Time) bool {
 
