@@ -1,120 +1,30 @@
 {
 "values": [
 {
-"CPUh": 0,
-"GPUh": 0,
-"amountSpent": 0,
-"memoryMB": 0,
-"month": "12-2020",
-"numberVM": 0,
-"projectid": "alice-cern"
-},
-{
-"CPUh": 174,
-"GPUh": 31,
-"amountSpent": 8.11,
-"memoryMB": 288224,
-"month": "12-2020",
-"numberVM": 174,
-"projectid": "beop-teabt-cern"
-},
-{
-"CPUh": 500,
-"GPUh": 112,
-"amountSpent": 84.03,
-"memoryMB": 360000,
-"month": "01-2021",
-"numberVM": 500,
-"projectid": "beop-teabt-cern"
-},
-{
-"CPUh": 108,
-"GPUh": 24,
-"amountSpent": 20.7,
-"memoryMB": 77760,
+"CPUh": 191,
+"GPUh": 42,
+"amountSpent": 38.91,
+"memoryMB": 137520,
 "month": "02-2021",
-"numberVM": 108,
+"numberVM": 191,
 "projectid": "beop-teabt-cern"
 },
 {
-"CPUh": 0,
-"GPUh": 0,
-"amountSpent": 0,
-"memoryMB": 0,
-"month": "12-2020",
-"numberVM": 0,
-"projectid": "cms-cern-project"
-},
-{
-"CPUh": 38365,
-"GPUh": 615,
-"amountSpent": 2978.58,
-"memoryMB": 180516416,
-"month": "12-2020",
-"numberVM": 38365,
-"projectid": "it-atlas-cern"
-},
-{
-"CPUh": 47260,
-"GPUh": 399,
-"amountSpent": 1235.44,
-"memoryMB": 225890944,
-"month": "01-2021",
-"numberVM": 47260,
-"projectid": "it-atlas-cern"
-},
-{
-"CPUh": 25806,
+"CPUh": 27207,
 "GPUh": 756,
-"amountSpent": 1104.62,
-"memoryMB": 127005840,
+"amountSpent": 1181.83,
+"memoryMB": 133746688,
 "month": "02-2021",
-"numberVM": 25806,
+"numberVM": 27207,
 "projectid": "it-atlas-cern"
 },
 {
-"CPUh": 0,
-"GPUh": 0,
-"amountSpent": 0,
-"memoryMB": 0,
-"month": "01-2021",
-"numberVM": 0,
-"projectid": "it-db-ia-cern"
-},
-{
-"CPUh": 0,
-"GPUh": 0,
-"amountSpent": 0,
-"memoryMB": 0,
-"month": "01-2021",
-"numberVM": 0,
-"projectid": "it-db-sas-cern"
-},
-{
-"CPUh": 2416,
-"GPUh": 0,
-"amountSpent": 3987.74,
-"memoryMB": 3479040,
-"month": "12-2020",
-"numberVM": 2416,
-"projectid": "it-openlab-cern"
-},
-{
-"CPUh": 2672,
-"GPUh": 16,
-"amountSpent": 2890.14,
-"memoryMB": 3888480,
-"month": "01-2021",
-"numberVM": 2672,
-"projectid": "it-openlab-cern"
-},
-{
-"CPUh": 537,
-"GPUh": 87,
-"amountSpent": 996.9,
-"memoryMB": 845280,
+"CPUh": 600,
+"GPUh": 102,
+"amountSpent": 1221.15,
+"memoryMB": 936000,
 "month": "02-2021",
-"numberVM": 537,
+"numberVM": 600,
 "projectid": "it-openlab-cern"
 }
 ]
