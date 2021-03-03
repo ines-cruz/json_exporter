@@ -1,11 +1,11 @@
+global:
+  scrape_interval: 30s
 
 scrape_configs:
-
-
   ## gather the metrics from third party json sources, via the json exporter
 - job_name: json
   metrics_path: /probe
-  scrape_interval: 86400s
+  scrape_interval: 30s
   scrape_timeout: 30s
   static_configs:
     - targets:
@@ -17,3 +17,21 @@ scrape_configs:
       target_label: instance
     - target_label: __address__
       replacement: localhost:7979
+  # Remote write configuration (for Graphite, OpenTSDB, or InfluxDB).
+remote_write:
+  - url:  https://dbod-exporterdb.cern.ch:8081/api/v2/write?db=exporter&org=prometheus&bucket=exporter&precision=ms
+    tls_config:
+      insecure_skip_verify: true
+    basic_auth:
+      username: admin
+      password: password
+remote_read:
+  - url:  https://dbod-exporterdb.cern.ch:8081/api/v2/read?db=exporter
+    tls_config:
+      insecure_skip_verify: true
+    basic_auth:
+      username: admin
+      password: password
+
+
+

@@ -38,7 +38,7 @@ grafana(){
 app(){
   echo "Run json_exporter"
   python -m SimpleHTTPServer 8080 &>> logs/SimpleHTTPServer_logs & # serves the files to be consumed by json_exporter (not needed in a monolithic, but needed when separating the 3 services)
-  ./json_exporter http://localhost:8080/examples/output.json examples/config.yml &>> logs/json_exporter_logs &
+  ./json_exporter http://localhost:8080/examples/output.json examples/config.yml >> logs/json_exporter_logs
   # logs sent to SimpleHTTPServer_logs and json_exporter_logs...
 }
 
