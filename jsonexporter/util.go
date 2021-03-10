@@ -126,11 +126,19 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 	return metrics, nil
 }
 
-func FetchJson(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
+func FetchJsonGCP(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
 
-	gcp, err := providers.GetGoogle(config, ctx, endpoint)
+	gcp, err := providers.GetGCP(config, ctx, endpoint)
 	if err != nil {
 		fmt.Println("Error getting BigQuery data")
 	}
 	return gcp, nil
+}
+func FetchJsonAWS(ctx context.Context, endpoint string, config config.Config) ([]byte, error) {
+	aws, err := providers.GetAWS()
+	if err != nil {
+		fmt.Println("Error getting Athena data")
+	}
+
+	return aws, nil
 }

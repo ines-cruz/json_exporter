@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 package cmd
+
 import (
 	"context"
-	"net/http"
 	"fmt"
 	"github.com/go-kit/kit/log/level"
 	"github.com/ines-cruz/json_exporter/config"
@@ -21,15 +21,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
+	"net/http"
 )
 
 func Run() {
 	promlogConfig := &promlog.Config{}
-		logger := promlog.New(promlogConfig)
-		config, err := config.LoadConfig("examples/config.yml")
-		if err != nil {
-			level.Error(logger).Log("msg", "Error loading config", "err", err) //nolint:errcheck
-		}
+	logger := promlog.New(promlogConfig)
+	config, err := config.LoadConfig("examples/config.yml")
+	if err != nil {
+		level.Error(logger).Log("msg", "Error loading config", "err", err) //nolint:errcheck
+	}
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
@@ -48,7 +49,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, config config.Config) 
 	r = r.WithContext(ctx)
 
 	registry := prometheus.NewPedanticRegistry()
-	metrics, err := jsonexporter.CreateMetricsList( config)
+	metrics, err := jsonexporter.CreateMetricsList(config)
 	if err != nil {
 		fmt.Println("Failed to create metrics list from config")
 	}
@@ -59,13 +60,19 @@ func probeHandler(w http.ResponseWriter, r *http.Request, config config.Config) 
 		http.Error(w, "Target parameter is missing", http.StatusBadRequest)
 		return
 	}
-	data, err := jsonexporter.FetchJson(ctx, target, config)
+	dataGCP, err := jsonexporter.FetchJsonGCP(ctx, target, config)
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
 		return
 	}
-	jsonMetricCollector.Data = data
+	dataAWS, err := jsonexporter.FetchJsonAWS(ctx, target, config)
 
+	jsonMetricCollector.Data = dataGCP
+	if err != nil {
+		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
+		return
+	}
+	jsonMetricCollector.Data = dataAWS
 	registry.MustRegister(jsonMetricCollector)
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ines-cruz/json_exporter/config"
-	"github.com/pkg/errors"
 	pconfig "github.com/prometheus/common/config"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -20,7 +19,7 @@ import (
 	"time"
 )
 
-func GetGoogle(config config.Config, ctx context.Context, endpoint string) ([]byte, error) {
+func GetGCP(config config.Config, ctx context.Context, endpoint string) ([]byte, error) {
 	httpClientConfig := config.HTTPClientConfig
 	client2, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
 	if err != nil {
@@ -76,7 +75,7 @@ func GetGoogle(config config.Config, ctx context.Context, endpoint string) ([]by
 	}()
 
 	if resp.StatusCode/100 != 2 {
-		return nil, errors.New(resp.Status)
+		return nil, err
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
