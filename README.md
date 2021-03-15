@@ -10,6 +10,8 @@ Dashboards are available in Grafana.
 
 After cloning the project you can either run it locally or with Docker.
 
+Documentation can be found [here](https://codimd.web.cern.ch/s/mKlCCS_vs#)
+
 # Cloning and running the project 
 ```sh
 git clone https://github.com/ines-cruz/json_exporter.git
