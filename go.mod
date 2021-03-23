@@ -6,7 +6,8 @@ require (
 	cloud.google.com/go v0.74.0 // indirect
 	cloud.google.com/go/bigquery v1.12.0
 	cloud.google.com/go/pubsub v1.9.1 // indirect
-	github.com/aws/aws-sdk-go v1.37.27
+	github.com/aws/aws-sdk-go v1.37.32
+	github.com/aws/aws-sdk-go-v2 v1.2.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/go-kit/kit v0.9.0
 	github.com/joho/godotenv v1.3.0 // indirect

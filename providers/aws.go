@@ -13,7 +13,7 @@ const table = "testexporterdb.testtable"
 const db = "testexporterdb"
 const outputBucket = "s3://strategic-blue-reports-cern/sb-cern-aws/"
 
-func GetAWS() { //TODO will have to return  ([]byte, error)   that will be our data
+func GetAthena() { //TODO will have to return  ([]byte, error)   that will be our data
 	awscfg := &aws.Config{}
 	awscfg.WithRegion("us-east-2")
 	// Create the session that the service will use.

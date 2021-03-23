@@ -13,7 +13,9 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"fmt"
 	"github.com/go-kit/kit/log/level"
 	"github.com/ines-cruz/json_exporter/config"
@@ -60,19 +62,27 @@ func probeHandler(w http.ResponseWriter, r *http.Request, config config.Config) 
 		http.Error(w, "Target parameter is missing", http.StatusBadRequest)
 		return
 	}
-	dataGCP, err := jsonexporter.FetchJsonGCP(ctx, target, config)
+	/*dataGCP, err := jsonexporter.FetchJsonGCP(ctx, target, config)
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
 		return
-	}
+	}*/
 	dataAWS, err := jsonexporter.FetchJsonAWS(ctx, target, config)
-
-	jsonMetricCollector.Data = dataGCP
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
 		return
 	}
-	jsonMetricCollector.Data = dataAWS
+
+	buf := &bytes.Buffer{}
+	gob.NewEncoder(buf).Encode(dataAWS)
+	bs := buf.Bytes()
+	fmt.Printf("%q", bs)
+
+	jsonMetricCollector.Data = bs
+	if err != nil {
+		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
+		return
+	}
 	registry.MustRegister(jsonMetricCollector)
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
