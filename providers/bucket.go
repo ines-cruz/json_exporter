@@ -1,7 +1,9 @@
 package providers
 
 import (
+	"compress/gzip"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,6 +15,7 @@ import (
 	pconfig "github.com/prometheus/common/config"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 )
@@ -24,15 +27,10 @@ func GetAWS(config config.Config, ctx context.Context, endpoint string) ([]byte,
 		fmt.Println("Error generating HTTP client")
 		return nil, err
 	}
-	// 1) Define your bucket and item names
-	bucket := "strategic-blue-reports-cern"
-	item := "sb-cern-aws/"
 
-	fileContent := getDataFromS3File(bucket, item)
+	fileContent := getDataFromS3File()
 
-	jsonData, _ := json.Marshal(fileContent)
-
-	var ex = extractData(jsonData)
+	var ex = parseColumn(fileContent)
 	thisMap := make(map[string]([]map[string]interface{}))
 	thisMap["values"] = ex
 
@@ -56,6 +54,7 @@ func GetAWS(config config.Config, ctx context.Context, endpoint string) ([]byte,
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	defer func() {
 		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
@@ -77,59 +76,77 @@ func GetAWS(config config.Config, ctx context.Context, endpoint string) ([]byte,
 
 }
 
-func getDataFromS3File(bucket string, s3File string) string {
-	//the only writable directory in the lambda is /tmp
-	file, err := os.Create("/tmp/" + s3File)
+// function we use to display errors and exit.
+func exitErrorf(msg string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, msg+"\n", args...)
+	os.Exit(1)
+}
+
+func getDataFromS3File() *os.File {
+	// 1) Define your bucket and item names
+	bucket := "strategic-blue-reports-cern/"
+	item := "sb-cern-aws/20201101-20201201/d5569030-de28-3c3b-a5ca-4c54d40ba416/sb-cern-aws-1.csv.gz"
+
+	file, err := os.Create("sb-cern-aws-1.csv")
 	if err != nil {
-		fmt.Errorf("Unable to open file %q, %v", s3File, err)
+		log.Fatal(err)
 	}
 
-	defer file.Close()
 	// Get AWS session
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("us-east-2"),
 		Credentials: credentials.NewStaticCredentials(
-			"----------",
-			"----------",
+			"----",
+			"---",
 			""),
 	})
-	if err != nil {
-		fmt.Println("Error creating the session", err)
-		//return
-	}
 
 	downloader := s3manager.NewDownloader(sess)
 
-	_, err = downloader.Download(file,
+	numBytes, err := downloader.Download(file,
 		&s3.GetObjectInput{
 			Bucket: aws.String(bucket),
-			Key:    aws.String(s3File),
+			Key:    aws.String(item),
 		})
 	if err != nil {
-		fmt.Errorf("Unable to download s3File %q, %v", s3File, err)
+		exitErrorf("Unable to download item %q, %v", item, err)
 	}
 
-	dat, err := ioutil.ReadFile(file.Name())
+	fmt.Println("Downloaded", file.Name(), numBytes, "bytes")
 
-	if err != nil {
-		fmt.Errorf("Cannot read the file")
-	}
-
-	return string(dat)
+	return file
 
 }
-
-func extractData(data []byte) []map[string]interface{} {
-
-	//TODO and add name
+func parseColumn(file *os.File) []map[string]interface{} {
 	d := map[string]interface{}{}
+
+	csvr, err := gzip.NewReader(file)
+	if err != nil {
+		fmt.Print("foo\x00\x00")
+		log.Fatal(err)
+	}
+	defer csvr.Close()
 	var final = []map[string]interface{}{}
 
-	for i := 0; i < len(data); i++ {
+	var usageAccountID string
+	//var unblendedCost string
+	// select just the columns we want
 
-		d["x"] = data[i]
+	cr := csv.NewReader(csvr)
+	rec, err := cr.Read()
+	if err != nil {
+		log.Fatal(err)
 	}
-	//	d["groupid"] = MatchNametoID()
+	for _, v := range rec {
+		fmt.Println(v)
+
+		usageAccountID = v
+
+	}
+
+	d["projectid"] = usageAccountID
+	//	d["amountSpent"] = unblendedCost
+	//TODO  add name
 
 	final = append(final, d)
 	return final
