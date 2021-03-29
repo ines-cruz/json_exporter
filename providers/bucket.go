@@ -18,6 +18,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 )
 
 func GetAWS(config config.Config, ctx context.Context, endpoint string) ([]byte, error) {
@@ -27,8 +29,17 @@ func GetAWS(config config.Config, ctx context.Context, endpoint string) ([]byte,
 		fmt.Println("Error generating HTTP client")
 		return nil, err
 	}
+	bucket := "strategic-blue-reports-cern/"
 
-	fileContent := getDataFromS3File()
+	t := time.Now()
+	time1 := t.Format("200601")
+	time2 := t.AddDate(0, 1, 0).Format("200601")
+	timePeriod := string(time1) + "01-" + string(time2) + "01"
+
+	manifestFile := getDataFromS3File(bucket, "/sb-cern-aws/"+timePeriod+"/sb-cern-aws-Manifest.json")
+
+	pathFromManifest := getField(manifestFile)
+	fileContent := getDataFromS3File(bucket, pathFromManifest)
 
 	var ex = parseColumn(fileContent)
 	thisMap := make(map[string]([]map[string]interface{}))
@@ -82,12 +93,8 @@ func exitErrorf(msg string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func getDataFromS3File() *os.File {
-	// 1) Define your bucket and item names
-	bucket := "strategic-blue-reports-cern/"
-	item := "sb-cern-aws/20201101-20201201/d5569030-de28-3c3b-a5ca-4c54d40ba416/sb-cern-aws-1.csv.gz"
-
-	file, err := os.Create("sb-cern-aws-1.csv")
+func getDataFromS3File(bucket string, path string) *os.File {
+	file, err := os.Create("test.csv")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,7 +103,7 @@ func getDataFromS3File() *os.File {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("us-east-2"),
 		Credentials: credentials.NewStaticCredentials(
-			"----",
+			"---",
 			"---",
 			""),
 	})
@@ -106,10 +113,10 @@ func getDataFromS3File() *os.File {
 	numBytes, err := downloader.Download(file,
 		&s3.GetObjectInput{
 			Bucket: aws.String(bucket),
-			Key:    aws.String(item),
+			Key:    aws.String(path),
 		})
 	if err != nil {
-		exitErrorf("Unable to download item %q, %v", item, err)
+		exitErrorf("Unable to download item %q, %v", path, err)
 	}
 
 	fmt.Println("Downloaded", file.Name(), numBytes, "bytes")
@@ -119,35 +126,78 @@ func getDataFromS3File() *os.File {
 }
 func parseColumn(file *os.File) []map[string]interface{} {
 	d := map[string]interface{}{}
+	var previous string
 
 	csvr, err := gzip.NewReader(file)
 	if err != nil {
 		fmt.Print("foo\x00\x00")
 		log.Fatal(err)
 	}
+	fmt.Print("foo\x00\x00")
 	defer csvr.Close()
 	var final = []map[string]interface{}{}
 
 	var usageAccountID string
-	//var unblendedCost string
+	var unblendedCost string
 	// select just the columns we want
 
 	cr := csv.NewReader(csvr)
-	rec, err := cr.Read()
-	if err != nil {
-		log.Fatal(err)
+
+	for {
+		previous = usageAccountID
+		row, err := cr.Read()
+		// Stop at EOF.
+		if err == io.EOF {
+			break
+		}
+		if !verifyID(previous, usageAccountID) && len(d) > 0 {
+
+			final = append(final, d)
+			d = map[string]interface{}{} //TODO mudar 'para ter varios como no goole
+		}
+
+		for range row {
+			//TODO add more fields
+			usageAccountID = row[8]
+			unblendedCost = row[22]
+
+			d["projectid"] = usageAccountID
+			d["amountSpent"] = unblendedCost
+
+		}
 	}
-	for _, v := range rec {
-		fmt.Println(v)
-
-		usageAccountID = v
-
-	}
-
-	d["projectid"] = usageAccountID
-	//	d["amountSpent"] = unblendedCost
-	//TODO  add name
+	//TODO  match and add name
 
 	final = append(final, d)
 	return final
+}
+
+func getField(file *os.File) string {
+	// Open our jsonFile
+	jsonFile, err := os.Open(file.Name())
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Successfully Opened json")
+	// defer the closing of our jsonFile so that we can parse it later on
+	defer jsonFile.Close()
+
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+
+	var result map[string]interface{}
+	json.Unmarshal([]byte(byteValue), &result)
+
+	fmt.Println(result["reportKeys"])
+
+	b, _ := json.Marshal(result["reportKeys"])
+
+	s2 := string(b)
+	s2 = strings.TrimRight(s2, "\\\"]\"")
+
+	str3 := s2
+	str3 = strings.TrimLeft(s2, "\"[\\")
+
+	return str3
+
 }
