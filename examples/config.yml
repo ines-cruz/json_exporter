@@ -11,5 +11,6 @@ metrics:
     memoryMB: $.memoryMB
     CPUh: $.CPUh
     GPUh: $.GPUh
+    provider: $.provider
 
 

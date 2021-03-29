@@ -99,7 +99,7 @@ func printResults(iter *bigquery.RowIterator) []map[string]interface{} {
 	var endTime time.Time
 	var data = []map[string]interface{}{}
 	d := map[string]interface{}{}
-
+	provider := "GCP"
 	for {
 
 		previous = projectid
@@ -150,6 +150,7 @@ func printResults(iter *bigquery.RowIterator) []map[string]interface{} {
 				}
 
 				d["month"] = startTime.Format("01-2006")
+				d["provider"] = provider
 				d["amountSpent"] = math.Round(sumCost*100) / 100
 				d["numberVM"] = sumVM
 				d["memoryMB"] = sumMem

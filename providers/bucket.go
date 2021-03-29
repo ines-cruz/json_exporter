@@ -18,6 +18,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -34,7 +35,7 @@ func GetAWS(config config.Config, ctx context.Context, endpoint string) ([]byte,
 	t := time.Now()
 	time1 := t.Format("200601")
 	time2 := t.AddDate(0, 1, 0).Format("200601")
-	timePeriod := string(time1) + "01-" + string(time2) + "01"
+	timePeriod := time1 + "01-" + time2 + "01"
 
 	manifestFile := getDataFromS3File(bucket, "/sb-cern-aws/"+timePeriod+"/sb-cern-aws-Manifest.json")
 
@@ -127,51 +128,77 @@ func getDataFromS3File(bucket string, path string) *os.File {
 func parseColumn(file *os.File) []map[string]interface{} {
 	d := map[string]interface{}{}
 	var previous string
-
+	var sumCost float64
 	csvr, err := gzip.NewReader(file)
 	if err != nil {
 		fmt.Print("foo\x00\x00")
 		log.Fatal(err)
 	}
-	fmt.Print("foo\x00\x00")
+	fmt.Print("Waiting for results. Matching group's ID's with names.")
 	defer csvr.Close()
 	var final = []map[string]interface{}{}
 
 	var usageAccountID string
+	var projectID string
 	var unblendedCost string
+	provider := "AWS"
 	// select just the columns we want
-
 	cr := csv.NewReader(csvr)
 
 	for {
-		previous = usageAccountID
 		row, err := cr.Read()
 		// Stop at EOF.
 		if err == io.EOF {
 			break
 		}
-		if !verifyID(previous, usageAccountID) && len(d) > 0 {
 
-			final = append(final, d)
-			d = map[string]interface{}{} //TODO mudar 'para ter varios como no goole
-		}
-
-		for range row {
-			//TODO add more fields
+		//TODO add more fields
+		if _, err := strconv.Atoi(row[8]); err == nil {
 			usageAccountID = row[8]
 			unblendedCost = row[22]
 
-			d["projectid"] = usageAccountID
-			d["amountSpent"] = unblendedCost
+			if !verifyID(previous, usageAccountID) {
+				sumCost = 0
+				projectID = MatchNametoID(usageAccountID)
+				final = append(final, d)
+				d = map[string]interface{}{}
+			} else {
+				sumCost = sumCostFloat(unblendedCost, sumCost)
+			}
+		}
+		previous = usageAccountID
 
+		if len(projectID) > 0 && sumCost > 0 {
+			d["projectid"] = projectID
+			d["amountSpent"] = sumCost
+			d["provider"] = provider
 		}
 	}
-	//TODO  match and add name
 
 	final = append(final, d)
 	return final
 }
 
+func sumCostFloat(cost string, sumCost float64) float64 {
+	if s, err := strconv.ParseFloat(cost, 32); err == nil {
+		return sumCost + s
+	}
+	return sumCost
+
+}
+
+//Match the ID in the file to the name of the group, we want to display the name and not the ID
+func MatchNametoID(idFile string) string {
+	item := GetGroupID()
+	for i := 0; i < len(item); i++ {
+		if strings.EqualFold(idFile, item[i][1]) {
+			return item[i][0]
+		}
+	}
+	return ""
+}
+
+// To retrieve the reportKeys field from the Manifest.json in the bucket to know which file is the most current
 func getField(file *os.File) string {
 	// Open our jsonFile
 	jsonFile, err := os.Open(file.Name())
@@ -179,14 +206,14 @@ func getField(file *os.File) string {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Successfully Opened json")
+	fmt.Println("Successfully Opened json file")
 	// defer the closing of our jsonFile so that we can parse it later on
 	defer jsonFile.Close()
 
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 
 	var result map[string]interface{}
-	json.Unmarshal([]byte(byteValue), &result)
+	json.Unmarshal(byteValue, &result)
 
 	fmt.Println(result["reportKeys"])
 

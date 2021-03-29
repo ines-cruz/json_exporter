@@ -120,14 +120,3 @@ func GetID() string {
 	return id
 
 }
-
-/*func MatchNametoID( idFile string ) string{
-
-
-	if idFile==GetID() {
-		return name
-	}
-	return "name"
-	//[[ALICE_Users 118709236800] [ATLAS_Users 124939657953] [BE-OP_TE-ABT_Users 011747925465] [CMS_Users 441541562849] [EP-CMG_Users 016245035593] [IT-DB-IA_Users 239533842733] [IT-DB-SAS_Users 610129916007] [LHCb_Users 744673412807] [Openlab_Users 639504270038] [TH_Users 654847038767]]
-	//GETNAMe
-}*/
